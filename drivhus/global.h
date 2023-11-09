@@ -1,15 +1,23 @@
 #ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 
-const uint8_t RS485_RX_PIN     = 13;
-const uint8_t RS485_TX_PIN     = 27;
-const uint8_t RS485_ENABLE_PIN = 14;
+#include <memory>
+#include <stdint.h>
 
+
+static constexpr uint8_t RS485_RX_PIN     = 13;
+static constexpr uint8_t RS485_TX_PIN     = 27;
+static constexpr uint8_t RS485_ENABLE_PIN = 14;
+static constexpr uint8_t SETUP_MODE_ENABLE_PIN = 33;
+
+
+class Settings;
+[[nodiscard]] std::shared_ptr<Settings> getSettings();
 
 class RS485;
-extern RS485 g_rs485;
+[[nodiscard]] std::shared_ptr<RS485> getRS485();
 
-class WebServer;
-extern WebServer g_web_server;
+class Network;
+[[nodiscard]] std::shared_ptr<Network> getNetwork();
 
 #endif // _GLOBAL_H_

@@ -7,19 +7,20 @@
 #include <ModbusRTUMaster.h>
 
 
-const uint32_t RS485_SERIAL_BAUD = 9600; 
-const unsigned long RS485_SCAN_INTERVAL_MS = 15000L;
-
-const uint8_t RS485_UNDEFINED_ID = 0;
-const uint8_t RS485_MIN_ID = 1;
-const uint8_t RS485_MAX_ID = 255;
-
-const uint8_t DRIVHUS_RS485_MIN_ID = 1;
-const uint8_t DRIVHUS_RS485_MAX_ID = 15;
-
 
 class RS485
 {
+public:
+  static constexpr uint32_t SERIAL_BAUD = 9600; 
+  static constexpr unsigned long SCAN_INTERVAL_MS = 15000L;
+
+  static constexpr uint8_t UNDEFINED_ID = 0;
+  static constexpr uint8_t MIN_ID = 1;
+  static constexpr uint8_t MAX_ID = 255;
+
+  static constexpr uint8_t DRIVHUS_MIN_ID = 1;
+  static constexpr uint8_t DRIVHUS_MAX_ID = 15;
+
 public:
   RS485();
   [[nodiscard]] bool init();

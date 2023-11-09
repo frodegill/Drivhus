@@ -1,24 +1,28 @@
 
 #include "global.h"
 
+#include "network.h"
 #include "rs485.h"
-#include "webserver.h"
+#include "settings.h"
 
-
-WebServer g_web_server;
-RS485 g_rs485;
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("Starting Drivhus");
 
-  g_rs485.init();
-  g_web_server.init();
+  if (!::getSettings()->init() ||
+      !::getNetwork()->init() ||
+      !::getRS485()->init()) {
+    Serial.println("Setup failed");
+  }
 }
 
 void loop() {
   unsigned long current_time = millis();
 
-  g_rs485.loop(current_time);
-  g_web_server.loop(current_time);
+  ::getSettings()->loop(current_time);
+  ::getNetwork()->loop(current_time);
+  ::getRS485()->loop(current_time);
+
   delay(2000);
 }
