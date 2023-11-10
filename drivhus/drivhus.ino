@@ -24,5 +24,5 @@ void loop() {
   ::getNetwork()->loop(current_time);
   ::getRS485()->loop(current_time);
 
-  delay(2000);
+  delay(200);
 }

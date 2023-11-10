@@ -1,5 +1,8 @@
 #include "global.h"
 
+#include <iomanip>
+#include <sstream>
+
 #include "network.h"
 #include "rs485.h"
 #include "settings.h"
@@ -27,4 +30,22 @@ std::shared_ptr<Settings> getSettings() {
     g_settings = std::make_shared<Settings>();
   }
   return g_settings;
+}
+
+std::string floatToString(const float& value, uint8_t precision) {
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(precision) << value;
+  return ss.str();
+}
+
+std::string uint8ToHex(uint8_t value) {
+  std::stringstream ss;
+  ss << std::setfill('0') << std::setw(2) << std::hex << std::uppercase << static_cast<unsigned int>(value);
+  return ss.str();
+}
+
+std::string uint16ToHex(uint16_t value) {
+  std::stringstream ss;
+  ss << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << static_cast<unsigned int>(value);
+  return ss.str();
 }

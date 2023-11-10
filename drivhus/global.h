@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <stdint.h>
+#include <string>
 
 
 static constexpr uint8_t RS485_RX_PIN     = 13;
@@ -19,5 +20,10 @@ class RS485;
 
 class Network;
 [[nodiscard]] std::shared_ptr<Network> getNetwork();
+
+
+std::string floatToString(const float& value, uint8_t precision);
+std::string uint8ToHex(uint8_t value);
+std::string uint16ToHex(uint16_t value);
 
 #endif // _GLOBAL_H_

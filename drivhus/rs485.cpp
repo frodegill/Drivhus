@@ -2,16 +2,19 @@
 
 #include "global.h"
 
+#include "network.h"
+
 
 RS485::RS485()
 : m_previous_complete_scan_time(0L),
-  m_previous_scanned_sensor_id(UNDEFINED_ID) {
+  m_previous_scanned_sensor_id(UNDEFINED_ID),
+  m_performed_full_scan(false) {
   int i;
   for (i=0; i<8; i++) {
     m_sensor_present[i] = 0;
   }
   for (i=0; i<15; i++) {
-    m_sensor_temp[15] = 0x00;
+    m_sensor_temp[i] = 0x00;
     m_sensor_humidity[i] = 0x00;
   }
 }
@@ -20,7 +23,7 @@ bool RS485::init() {
   Serial2.begin(SERIAL_BAUD, SERIAL_8E1, RS485_RX_PIN, RS485_TX_PIN);
   m_modbus = std::unique_ptr<ModbusRTUMaster>(new ModbusRTUMaster(Serial2, RS485_ENABLE_PIN)); // serial port, driver enable pin for rs-485 (optional)
   m_modbus->begin(Serial2.baudRate());
-  m_modbus->setTimeout(200);
+  m_modbus->setTimeout(MODBUS_TIMEOUT);
   return true;
 }
 
@@ -32,21 +35,37 @@ bool RS485::loop(const unsigned long& current_time) {
 
   if (m_previous_scanned_sensor_id!=UNDEFINED_ID ||
       (m_previous_complete_scan_time+SCAN_INTERVAL_MS)<current_time) {
-      
+
       //Increase Sensor ID and check if we are done
-      if (m_previous_scanned_sensor_id == MAX_ID) {
+      if (m_previous_scanned_sensor_id >= (m_performed_full_scan ? DRIVHUS_MAX_ID : MAX_ID)) {
         m_previous_scanned_sensor_id = UNDEFINED_ID;
         m_previous_complete_scan_time = current_time;
+        if (!m_performed_full_scan) {
+          m_performed_full_scan = true;
+        }
+        ::getNetwork()->getWebServer()->setSensorScanCompleted();
+        Serial.println("Scanning sensors completed");
         return true;
       } else {
-        m_previous_scanned_sensor_id = (m_previous_scanned_sensor_id==UNDEFINED_ID) ? MIN_ID : m_previous_scanned_sensor_id+1;
+        if (m_previous_scanned_sensor_id == UNDEFINED_ID) {
+          Serial.println("Scanning sensors started");
+        }
+        m_previous_scanned_sensor_id = (m_previous_scanned_sensor_id==UNDEFINED_ID) ? (m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID) : m_previous_scanned_sensor_id+1;
       }
 
       bool is_present = m_modbus->readHoldingRegisters(m_previous_scanned_sensor_id, 0x0001, tmp_holding_registers, 2);
       setSensorPresent(m_previous_scanned_sensor_id, is_present);
       if (is_present) {
+        Serial.print("Detected sensor ");
+        Serial.print(m_previous_scanned_sensor_id);
+        Serial.print(" with humidity ");
+        Serial.println(tmp_holding_registers[1]/100.0f);
         setSensorValues(m_previous_scanned_sensor_id, tmp_holding_registers[0], tmp_holding_registers[1]);
+      } else {
+        Serial.print("Not detected sensor ");
+        Serial.println(m_previous_scanned_sensor_id);
       }
+      ::getNetwork()->getWebServer()->updateSensor(m_previous_scanned_sensor_id);
   }
   return true;
 }
@@ -57,11 +76,11 @@ bool RS485::isSensorPresent(uint8_t id) const {
   return (m_sensor_present[index]&(1<<bit)) != 0;
 }
 
-std::vector<uint8_t> RS485::presentSensors() const {
-  std::vector<uint8_t> present_sensors;
+std::set<uint8_t> RS485::getPresentSensors() const {
+  std::set<uint8_t> present_sensors;
   for (uint8_t i=MIN_ID; i<=MAX_ID; i++) {
     if (isSensorPresent(i)) {
-      present_sensors.emplace_back(i);
+      present_sensors.emplace(i);
     }
   }
   return present_sensors;

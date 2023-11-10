@@ -4,6 +4,7 @@
 
 #include "global.h"
 #include "mqtt.h"
+#include "network.h"
 
 
 Settings::Settings()
@@ -26,7 +27,11 @@ bool Settings::loop(const unsigned long& current_time) {
     m_previous_setup_pin_poll_time = current_time;
   } else if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
     m_previous_setup_pin_poll_time = current_time;
-    m_in_setup_mode = digitalRead(SETUP_MODE_ENABLE_PIN)==LOW;
+    bool tmp_setup_mode = digitalRead(SETUP_MODE_ENABLE_PIN)==LOW;
+    if (tmp_setup_mode != m_in_setup_mode) {
+      m_in_setup_mode = tmp_setup_mode;
+      ::getNetwork()->getWebServer()->setSetupMode(m_in_setup_mode);
+    }
   }
 
   return true;
