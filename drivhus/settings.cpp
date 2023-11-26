@@ -1,5 +1,6 @@
 #include "settings.h"
 
+#include <sstream>
 #include <vector>
 
 #include "global.h"
@@ -9,8 +10,10 @@
 
 Settings::Settings()
 : m_mqtt_serverport_param(Mqtt::MQTT_DEFAULT_PORT),
+  m_settings_changed(false),
   m_previous_setup_pin_poll_time(0L),
-  m_in_setup_mode(false) {
+  m_in_setup_mode(false),
+  m_should_flush_settings(false) {
 }
 
 bool Settings::init() {
@@ -19,22 +22,40 @@ bool Settings::init() {
   EEPROM.begin(1 + 
                MAX_SSID_LENGTH+1 + MAX_SSID_PASSWORD_LENGTH+1 +
                MAX_MQTT_SERVERNAME_LENGTH+1 + MAX_MQTT_SERVERPORT_LENGTH+1 + MAX_MQTT_SERVERID_LENGTH+1 + MAX_MQTT_USERNAME_LENGTH+1 + MAX_MQTT_PASSWORD_LENGTH+1);
+
+  readPersistentParams();
+  m_in_setup_mode = isInSetupMode();
   return true;
 }
 
-bool Settings::loop(const unsigned long& current_time) {
-  if (current_time < m_previous_setup_pin_poll_time) { //Time will wrap around every ~50 days. DOn't consider this an error
+bool Settings::loop() {
+  const unsigned long current_time = millis();
+  if (current_time < m_previous_setup_pin_poll_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_setup_pin_poll_time = current_time;
-  } else if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
-    m_previous_setup_pin_poll_time = current_time;
-    bool tmp_setup_mode = digitalRead(SETUP_MODE_ENABLE_PIN)==LOW;
-    if (tmp_setup_mode != m_in_setup_mode) {
-      m_in_setup_mode = tmp_setup_mode;
-      ::getNetwork()->getWebServer()->setSetupMode(m_in_setup_mode);
-    }
+  }
+  
+  bool previous_setup_mode = m_in_setup_mode;
+  if (isInSetupMode() != previous_setup_mode) {
+    ::getNetwork()->getWebServer()->updateSetupMode();
   }
 
+  checkIfSettingsShouldBeFlushed();
+
   return true;
+}
+
+bool Settings::isInSetupMode() {
+  const unsigned long current_time = millis();
+  if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
+    m_previous_setup_pin_poll_time = current_time;
+    m_in_setup_mode = digitalRead(SETUP_MODE_ENABLE_PIN)==LOW;
+  }
+  return m_in_setup_mode;
+}
+
+void Settings::setShouldFlushSettings() {
+  const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
+  m_should_flush_settings = true;
 }
 
 void Settings::readPersistentString(std::string& s, int max_length, int& adr) {
@@ -96,7 +117,7 @@ void Settings::writePersistentByte(uint8_t b, int& adr) {
   EEPROM.write(adr++, b);
 }
 
-void Settings::writePersistentParams() {
+bool Settings::writePersistentParams() {
   int adr = 0;
   EEPROM.write(adr++, EEPROM_INITIALIZED_MARKER);
   writePersistentString(m_ssid_param, MAX_SSID_LENGTH, adr);
@@ -111,7 +132,7 @@ void Settings::writePersistentParams() {
   writePersistentString(m_mqtt_serverid_param, MAX_MQTT_SERVERID_LENGTH, adr);
   writePersistentString(m_mqtt_username_param, MAX_MQTT_USERNAME_LENGTH, adr);
   writePersistentString(m_mqtt_password_param, MAX_MQTT_PASSWORD_LENGTH, adr);
-  EEPROM.commit();
+  return EEPROM.commit();
 }
 
 size_t Settings::utf8ByteArrayLength(const std::string& s, size_t max_length) {
@@ -142,4 +163,27 @@ size_t Settings::utf8ByteArrayLength(const std::string& s, size_t max_length) {
   };
 
   return len;
+}
+
+void Settings::checkIfSettingsShouldBeFlushed() {
+  const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
+  if (m_should_flush_settings) {
+    flushSettings();
+  }
+}
+
+void Settings::flushSettings() {
+  const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
+  m_should_flush_settings = false;
+
+  if (isInSetupMode() && m_settings_changed) {
+    bool result = writePersistentParams();
+    if (result) {
+      m_settings_changed = false;
+    }
+
+    std::stringstream ss;
+    ss << "Flushing settings " << (result ? "SUCCEEDED" : "FAILED");
+    ::getNetwork()->getWebServer()->addWarningMessage(ss.str());
+  }
 }

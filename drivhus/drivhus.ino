@@ -20,9 +20,9 @@ void setup() {
 void loop() {
   unsigned long current_time = millis();
 
-  ::getSettings()->loop(current_time);
-  ::getNetwork()->loop(current_time);
-  ::getRS485()->loop(current_time);
+  ::getSettings()->loop();
+  ::getNetwork()->loop();
+  ::getRS485()->loop();
 
   delay(200);
 }
