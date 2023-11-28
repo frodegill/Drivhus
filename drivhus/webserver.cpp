@@ -129,7 +129,7 @@ bool WebServer::init() {
   return true;
 }
 
-bool WebServer::loop() {
+void WebServer::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_warning_message_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_warning_message_time = current_time;
@@ -144,7 +144,6 @@ bool WebServer::loop() {
   }
 
   m_ws->cleanupClients();
-  return true;
 }
 
 void WebServer::onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {

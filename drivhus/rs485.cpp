@@ -29,11 +29,11 @@ bool RS485::init() {
   return true;
 }
 
-bool RS485::loop() {
+void RS485::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_complete_scan_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_complete_scan_time = current_time;
-    return true;
+    return;
   }
 
   checkIfSensorsShouldBeReassigned();
@@ -49,7 +49,7 @@ bool RS485::loop() {
           m_performed_full_scan = true;
         }
         ::getNetwork()->getWebServer()->setSensorScanCompleted();
-        return true;
+        return;
       } else {
         m_previous_scanned_sensor_id = (m_previous_scanned_sensor_id==UNDEFINED_ID) ? (m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID) : m_previous_scanned_sensor_id+1;
       }
@@ -60,7 +60,6 @@ bool RS485::loop() {
       }
       ::getNetwork()->getWebServer()->updateSensor(m_previous_scanned_sensor_id);
   }
-  return true;
 }
 
 bool RS485::isSensorPresent(uint8_t id) const {

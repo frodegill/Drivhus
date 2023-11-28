@@ -25,7 +25,7 @@ public:
 public:
   Settings();
   [[nodiscard]] bool init();
-  [[nodiscard]] bool loop();
+  void loop();
 
   [[nodiscard]] bool isInSetupMode();
 

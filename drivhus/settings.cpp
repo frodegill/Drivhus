@@ -18,6 +18,7 @@ Settings::Settings()
 
 bool Settings::init() {
   pinMode(SETUP_MODE_ENABLE_PIN, INPUT_PULLUP);
+  analogReadResolution(12);
 
   EEPROM.begin(1 + 
                MAX_SSID_LENGTH+1 + MAX_SSID_PASSWORD_LENGTH+1 +
@@ -28,7 +29,7 @@ bool Settings::init() {
   return true;
 }
 
-bool Settings::loop() {
+void Settings::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_setup_pin_poll_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_setup_pin_poll_time = current_time;
@@ -40,8 +41,6 @@ bool Settings::loop() {
   }
 
   checkIfSettingsShouldBeFlushed();
-
-  return true;
 }
 
 bool Settings::isInSetupMode() {

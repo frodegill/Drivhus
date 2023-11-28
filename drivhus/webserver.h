@@ -16,7 +16,7 @@ public:
 public:
   WebServer();
   [[nodiscard]] bool init();
-  [[nodiscard]] bool loop();
+  void loop();
 
   static void onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 

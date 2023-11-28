@@ -28,7 +28,7 @@ public:
 public:
   RS485();
   [[nodiscard]] bool init();
-  [[nodiscard]] bool loop();
+  void loop();
 
   [[nodiscard]] bool isSensorPresent(uint8_t id) const;
   [[nodiscard]] std::set<uint8_t> getPresentSensors() const;

@@ -19,7 +19,7 @@ public:
 public:
   Network();
   [[nodiscard]] bool init();
-  [[nodiscard]] bool loop();
+  void loop();
 
   [[nodiscard]] bool isWiFiConnected();
   [[nodiscard]] std::shared_ptr<WebServer> getWebServer() const {return m_webserver;}

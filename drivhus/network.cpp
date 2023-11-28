@@ -22,7 +22,7 @@ bool Network::init() {
   return true;
 }
 
-bool Network::loop() {
+void Network::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_wifi_disconnected_since) { //Time will wrap around every ~50 days. Don't consider this an error
     m_wifi_disconnected_since = current_time;
@@ -66,7 +66,7 @@ bool Network::loop() {
     m_dns_server.processNextRequest(); //Route everything to 192.168.4.1
   }
 
-  return m_webserver->loop();
+  m_webserver->loop();
 }
 
 bool Network::isWiFiConnected() {

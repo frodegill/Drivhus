@@ -3,10 +3,36 @@
 #include <iomanip>
 #include <sstream>
 
+#include "dht22.h"
+#include "ky018.h"
 #include "network.h"
 #include "rs485.h"
 #include "settings.h"
 
+
+std::shared_ptr<DHT22> g_indoor_dht22;
+[[nodiscard]] std::shared_ptr<DHT22> getIndoorDHT22() {
+  if (!g_indoor_dht22) {
+    g_indoor_dht22 = std::make_shared<DHT22>(DHT22_INDOOR_PIN);
+  }
+  return g_indoor_dht22;
+}
+
+std::shared_ptr<DHT22> g_outdoor_dht22;
+[[nodiscard]] std::shared_ptr<DHT22> getOutdoorDHT22() {
+  if (!g_outdoor_dht22) {
+    g_outdoor_dht22 = std::make_shared<DHT22>(DHT22_OUTDOOR_PIN);
+  }
+  return g_outdoor_dht22;
+}
+
+std::shared_ptr<KY018> g_ky018;
+[[nodiscard]] std::shared_ptr<KY018> getKY018() {
+  if (!g_ky018) {
+    g_ky018 = std::make_shared<KY018>(KY018_PIN);
+  }
+  return g_ky018;
+}
 
 std::shared_ptr<Network> g_network;
 [[nodiscard]] std::shared_ptr<Network> getNetwork() {
