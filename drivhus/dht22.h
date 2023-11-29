@@ -7,7 +7,7 @@
 class DHT22
 {
 public:
-  DHT22(uint8_t pin);
+  DHT22(uint8_t id, uint8_t pin);
   [[nodiscard]] bool init();
   void loop();
 
@@ -16,6 +16,7 @@ public:
   [[nodiscard]] float getHumidity() const {return m_humidity;}
 
 private:
+  uint8_t m_id;
   uint8_t m_pin;
   DHTesp m_dht;
   unsigned long m_previous_sampling_time;

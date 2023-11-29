@@ -8,12 +8,13 @@
 #include "network.h"
 #include "rs485.h"
 #include "settings.h"
+#include "volt.h"
 
 
 std::shared_ptr<DHT22> g_indoor_dht22;
 [[nodiscard]] std::shared_ptr<DHT22> getIndoorDHT22() {
   if (!g_indoor_dht22) {
-    g_indoor_dht22 = std::make_shared<DHT22>(DHT22_INDOOR_PIN);
+    g_indoor_dht22 = std::make_shared<DHT22>(0, DHT22_INDOOR_PIN);
   }
   return g_indoor_dht22;
 }
@@ -21,7 +22,7 @@ std::shared_ptr<DHT22> g_indoor_dht22;
 std::shared_ptr<DHT22> g_outdoor_dht22;
 [[nodiscard]] std::shared_ptr<DHT22> getOutdoorDHT22() {
   if (!g_outdoor_dht22) {
-    g_outdoor_dht22 = std::make_shared<DHT22>(DHT22_OUTDOOR_PIN);
+    g_outdoor_dht22 = std::make_shared<DHT22>(1, DHT22_OUTDOOR_PIN);
   }
   return g_outdoor_dht22;
 }
@@ -56,6 +57,14 @@ std::shared_ptr<Settings> getSettings() {
     g_settings = std::make_shared<Settings>();
   }
   return g_settings;
+}
+
+std::shared_ptr<Volt> g_volt;
+[[nodiscard]] std::shared_ptr<Volt> getVolt() {
+  if (!g_volt) {
+    g_volt = std::make_shared<Volt>(VOLT_PIN);
+  }
+  return g_volt;
 }
 
 std::string floatToString(const float& value, uint8_t precision) {

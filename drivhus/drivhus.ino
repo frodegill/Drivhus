@@ -6,6 +6,7 @@
 #include "network.h"
 #include "rs485.h"
 #include "settings.h"
+#include "volt.h"
 
 
 void setup() {
@@ -16,6 +17,7 @@ void setup() {
       !::getIndoorDHT22()->init() ||
       !::getOutdoorDHT22()->init() ||
       !::getKY018()->init() ||
+      !::getVolt()->init() ||
       !::getNetwork()->init() ||
       !::getRS485()->init()) {
     Serial.println("Setup failed");
@@ -29,6 +31,7 @@ void loop() {
   ::getIndoorDHT22()->loop();
   ::getOutdoorDHT22()->loop();
   ::getKY018()->loop();
+  ::getVolt()->loop();
   ::getNetwork()->loop();
   ::getRS485()->loop();
 

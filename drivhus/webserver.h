@@ -24,6 +24,10 @@ public:
   void updateSetupMode();
   void updateSensor(uint8_t sensor_id);
   void setSensorScanCompleted();
+  void updateTempHumid(uint8_t id, float temp, float humid);
+  void updateLight(float light);
+  void updateVolt(float volt);
+
   size_t wsClientCount() const {return m_ws->count();}
 
   void addWarningMessage(const std::string& msg);
@@ -32,6 +36,13 @@ private:
   static void handleWebSocketMessage(void* arg, uint8_t* data, size_t len);
   static void notifyClients(const std::string& key, const std::string& data);
   static String processor(const String& var);
+
+  [[nodiscard]] float getIndoorTemp() const {return m_temp[0];}
+  [[nodiscard]] float getIndoorHumid() const {return m_humid[0];}
+  [[nodiscard]] float getLight() const {return m_light;}
+  [[nodiscard]] float getOutdoorTemp() const {return m_temp[1];}
+  [[nodiscard]] float getOutdoorHumid() const {return m_humid[1];}
+  [[nodiscard]] float getVolt() const {return m_volt;}
 
   void textAll(const std::string& key, const std::string& data);
   void updateNewSensorIdButtons(uint8_t sensor_id);
@@ -50,6 +61,11 @@ private:
 
   bool m_is_showing_setup;
   std::set<uint8_t> m_present_sensors;
+
+  float m_temp[2];
+  float m_humid[2];
+  float m_light;
+  float m_volt;
 
   std::list<std::string> m_warning_messages;
   std::recursive_mutex m_warning_messages_mutex;

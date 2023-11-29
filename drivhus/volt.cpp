@@ -1,4 +1,4 @@
-#include "ky018.h"
+#include "volt.h"
 
 #include <Arduino.h>
 
@@ -7,18 +7,18 @@
 #include "webserver.h"
 
 
-KY018::KY018(uint8_t pin)
+Volt::Volt(uint8_t pin)
 : m_pin(pin),
   m_previous_sampling_time(0L),
-  m_light_percentage(0.0f) {
+  m_volt(0.0f) {
 }
 
-bool KY018::init() {
+bool Volt::init() {
   pinMode(m_pin, INPUT);
   return true;
 }
 
-void KY018::loop() {
+void Volt::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_sampling_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_sampling_time = current_time;
@@ -26,7 +26,7 @@ void KY018::loop() {
 
   if ((m_previous_sampling_time+POLL_INTERVAL_MS)<current_time) {
     m_previous_sampling_time = current_time;
-    m_light_percentage = 100.0f - analogRead(m_pin)/40.95f;
-    ::getNetwork()->getWebServer()->updateLight(m_light_percentage);
+    m_volt = analogRead(m_pin)/4095.0f * MAX_VOLT;
+    ::getNetwork()->getWebServer()->updateVolt(m_volt);
   }
 }

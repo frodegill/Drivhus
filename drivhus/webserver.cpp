@@ -57,6 +57,15 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
 <tr><td>15</td><td><span id="SV0F">%SV0F%</span>&nbsp;<span id="NS0F">%NS0F%</span></td></tr>
 <tr><td id="SIX">%SIX%</td><td>Unused (ID needs to be 1 to 15)&nbsp;<span id="NIX">%NIX%</span></td></tr>
 </table>
+<table>
+<tr><th>Sensor</th><th>Value</th></tr>
+<tr><td>Indoor temp</td><td><span id="ITEMP">%ITEMP%</span><span>&nbsp;C</span></td></tr>
+<tr><td>Indoor humidity</td><td><span id="IHUMID">%IHUMID%</span><span>&nbsp;%%RH</span></td></tr>
+<tr><td>Indoor light</td><td><span id="ILIGHT">%ILIGHT%</span><span>&nbsp;%%</span></td></tr>
+<tr><td>Outdoor temp</td><td><span id="OTEMP">%OTEMP%</span><span>&nbsp;C</span></td></tr>
+<tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span><span>&nbsp;%%RH</span></td></tr>
+<tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span></td></tr>
+</table>
 </div>
 </body>
 <script>
@@ -76,6 +85,12 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
       document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
     } else if (event.data.startsWith('CSI') || event.data.startsWith('SIX') || event.data.startsWith('NIX')){
       document.getElementById(event.data.substring(0,3)).innerHTML = event.data.substring(3);
+    } else if (event.data.startsWith('VOLT')){
+      document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
+    } else if (event.data.startsWith('ITEMP') || event.data.startsWith('OTEMP')){
+      document.getElementById(event.data.substring(0,5)).innerHTML = event.data.substring(5);
+    } else if (event.data.startsWith('IHUMID') || event.data.startsWith('ILIGHT') || event.data.startsWith('OHUMID')){
+      document.getElementById(event.data.substring(0,6)).innerHTML = event.data.substring(6);
     } else if (event.data.startsWith('SHOW_SETUP')){
       var elm = document.getElementById('SETUP');
       if (event.data.length == 10) { //'SHOW_SETUP' with no value
@@ -111,7 +126,11 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
 
 WebServer::WebServer()
 : m_is_showing_setup(false),
+  m_light(0.0f),
+  m_volt(0.0f),
   m_warning_message_time(0L) {
+  m_temp[0] = m_temp[1] = 0.0f,
+  m_humid[0] = m_humid[1] = 0.0f;
 }
 
 bool WebServer::init() {
@@ -163,6 +182,10 @@ void WebServer::updateSetupMode() {
     for (uint8_t sensor_id=RS485::DRIVHUS_MIN_ID; sensor_id<=RS485::DRIVHUS_MAX_ID; sensor_id++) {
       updateNewSensorIdButtons(sensor_id);
     }
+    uint8_t unused_sensor_id = getUnusedSensorId();
+    if (unused_sensor_id != RS485::UNDEFINED_ID) {
+      updateNewSensorIdButtons(unused_sensor_id);
+    }
   } 
 }
 
@@ -189,6 +212,33 @@ void WebServer::updateSensor(uint8_t sensor_id) {
 
 void WebServer::setSensorScanCompleted() {
   notifyClients("CSI", "-");
+}
+
+void WebServer::updateTempHumid(uint8_t id, float temp, float humid) {
+  if (id < 2) {
+    if (temp<(m_temp[id]*0.99f) || temp>(m_temp[id]*1.01f)) {
+      m_temp[id] = temp;
+      notifyClients(id==0 ? "ITEMP" : "OTEMP", String(m_temp[id], 1).c_str());
+    }
+    if (humid<(m_humid[id]*0.99f) || humid>(m_humid[id]*1.01f)) {
+      m_humid[id] = humid;
+      notifyClients(id==0 ? "IHUMID" : "OHUMID", String(m_humid[id], 1).c_str());
+    }
+  }
+}
+
+void WebServer::updateLight(float light) {
+  if (light<(m_light*0.99f) || light>(m_light*1.01f)) {
+    m_light = light;
+    notifyClients("ILIGHT", String(m_light, 1).c_str());
+  }
+}
+
+void WebServer::updateVolt(float volt) {
+  if (volt<(m_volt*0.99f) || volt>(m_volt*1.01f)) {
+    m_volt = volt;
+    notifyClients("VOLT", String(m_volt, 2).c_str());
+  }
 }
 
 void WebServer::addWarningMessage(const std::string& msg) {
@@ -244,6 +294,18 @@ String WebServer::processor(const String& var){
   } else if (var.startsWith("NS")) {
     uint8_t sensor_id = std::stoul(var.substring(2).c_str(), nullptr, 16);
     return String(::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
+  } else if (var == "ITEMP") {
+    return String(::getNetwork()->getWebServer()->getIndoorTemp(), 1);
+  } else if (var == "IHUMID") {
+    return String(::getNetwork()->getWebServer()->getIndoorHumid(), 1);
+  } else if (var == "ILIGHT") {
+    return String(::getNetwork()->getWebServer()->getLight(), 1);
+  } else if (var == "OTEMP") {
+    return String(::getNetwork()->getWebServer()->getOutdoorTemp(), 1);
+  } else if (var == "OHUMID") {
+    return String(::getNetwork()->getWebServer()->getOutdoorHumid(), 1);
+  } else if (var == "VOLT") {
+    return String(::getNetwork()->getWebServer()->getVolt(), 2);
   } else if (::getSettings()->isInSetupMode()) {
     if (var == "SSID") {
       return String(::getSettings()->getSSID().c_str());
@@ -281,7 +343,7 @@ void WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
     }
   } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID) {
     uint8_t sensor_id = getUnusedSensorId();
-    if (sensor_id == RS485::UNDEFINED_ID) {
+    if (!::getSettings()->isInSetupMode() || sensor_id == RS485::UNDEFINED_ID) {
       notifyClients("NIX", "");
     } else {
       notifyClients("NIX", generateSelectOptions(sensor_id));

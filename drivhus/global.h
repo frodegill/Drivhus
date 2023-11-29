@@ -12,7 +12,7 @@ static constexpr uint8_t KY018_PIN        = 35;
 static constexpr uint8_t RS485_RX_PIN     = 13;
 static constexpr uint8_t RS485_TX_PIN     = 27;
 static constexpr uint8_t RS485_ENABLE_PIN = 14;
-static constexpr uint8_t VOLTAGE_PIN      = 34;
+static constexpr uint8_t VOLT_PIN         = 34;
 
 static constexpr uint8_t SETUP_MODE_ENABLE_PIN = 33;
 
@@ -32,6 +32,9 @@ class RS485; //Soil sensors bus
 
 class Network;
 [[nodiscard]] std::shared_ptr<Network> getNetwork();
+
+class Volt; //Volt sensor
+[[nodiscard]] std::shared_ptr<Volt> getVolt();
 
 
 std::string floatToString(const float& value, uint8_t precision);

@@ -1,8 +1,13 @@
 #include "dht22.h"
 
+#include "global.h"
+#include "network.h"
+#include "webserver.h"
 
-DHT22::DHT22(uint8_t pin)
-: m_pin(pin),
+
+DHT22::DHT22(uint8_t id, uint8_t pin)
+: m_id(id),
+  m_pin(pin),
   m_previous_sampling_time(0L),
   m_is_present(false),
   m_temperature(0.0f),
@@ -28,6 +33,7 @@ void DHT22::loop() {
       m_is_present = true;
       m_temperature = temp_and_humidity.temperature;
       m_humidity = temp_and_humidity.humidity;
+      ::getNetwork()->getWebServer()->updateTempHumid(m_id, m_temperature, m_humidity);
     } else {
       m_is_present = false;
     }
