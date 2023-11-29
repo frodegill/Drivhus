@@ -51,6 +51,7 @@ private:
   [[nodiscard]] std::string getUnusedSensorIdsAsString() const;
   [[nodiscard]] uint8_t getUnusedSensorId() const; //Returns the ID if one, and only one, sensor is within the range. UNDEFINED_ID if not.
   [[nodiscard]] std::string generateSelectOptions(uint8_t sensor_id) const;
+  [[nodiscard]] std::string generateVoltMultiplierCalibration() const;
 
   void checkIfWarningMessageShouldBeShown();
   void showWarningMessage(const std::string& msg);

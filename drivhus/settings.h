@@ -5,11 +5,13 @@
 #include <mutex>
 #include <string>
 
+#include "volt.h"
+
 
 class Settings
 {
 public:
-  static constexpr uint8_t  EEPROM_INITIALIZED_MARKER = 0xF1; //Just a magic number. CHange when EEPROM data format is incompatibly changed
+  static constexpr uint8_t  EEPROM_INITIALIZED_MARKER = 0xF2; //Just a magic number. CHange when EEPROM data format is incompatibly changed
   static constexpr const char* SETUP_SSID = "drivhus-setup";
   static constexpr const char*  DEFAULT_SERVERID = "/MiniDrivhus/1/";
   static constexpr unsigned long SETUP_PIN_POLL_INTERVAL_MS = 2000; //If system has been disconnected this long, switch to AccessPoint mode
@@ -17,10 +19,11 @@ public:
   static constexpr uint8_t MAX_SSID_LENGTH            = 32;
   static constexpr uint8_t MAX_SSID_PASSWORD_LENGTH   = 64;
   static constexpr uint8_t MAX_MQTT_SERVERNAME_LENGTH = 64;
-  static constexpr uint8_t MAX_MQTT_SERVERPORT_LENGTH =  5;
+  static constexpr uint8_t MAX_MQTT_SERVERPORT_LENGTH =  5; //5 digits, actually "0"-"65535"
   static constexpr uint8_t MAX_MQTT_SERVERID_LENGTH   = 32;
   static constexpr uint8_t MAX_MQTT_USERNAME_LENGTH   = 32;
   static constexpr uint8_t MAX_MQTT_PASSWORD_LENGTH   = 32;
+  static constexpr uint8_t VOLT_MULTIPLIER_LENGTH     =  5; //5 digits, actually "0"-"65535". float value is found by dividing by 256 (so 8bit.8bit)
 
 public:
   Settings();
@@ -36,6 +39,7 @@ public:
   [[nodiscard]] const std::string& getMQTTServerId() const {return m_mqtt_serverid_param;}
   [[nodiscard]] const std::string& getMQTTUsername() const {return m_mqtt_username_param;}
   [[nodiscard]] const std::string& getMQTTPassword() const {return m_mqtt_password_param;}
+  [[nodiscard]] float getVoltMultiplier() const {return m_volt_multiplier_param;}
 
   void setSSID(const std::string& value) {if (isInSetupMode() && m_ssid_param!=value){m_ssid_param=value; m_settings_changed=true;}}
   void setSSIDPassword(const std::string& value) {if (isInSetupMode() && m_ssid_password_param!=value){m_ssid_password_param=value; m_settings_changed=true;}}
@@ -44,6 +48,7 @@ public:
   void setMQTTServerId(const std::string& value) {if (isInSetupMode() && m_mqtt_serverid_param!=value){m_mqtt_serverid_param=value; m_settings_changed=true;}}
   void setMQTTUsername(const std::string& value) {if (isInSetupMode() && m_mqtt_username_param!=value){m_mqtt_username_param=value; m_settings_changed=true;}}
   void setMQTTPassword(const std::string& value) {if (isInSetupMode() && m_mqtt_password_param!=value){m_mqtt_password_param=value; m_settings_changed=true;}}
+  void setVoltMultiplier(float value) {if (isInSetupMode() && value>=0.0f && value<=Volt::MAX_VOLT && m_volt_multiplier_param!=value){m_volt_multiplier_param=value; m_settings_changed=true;}}
   void setShouldFlushSettings();
 
 private:
@@ -67,6 +72,7 @@ public:
   std::string m_mqtt_serverid_param;
   std::string m_mqtt_username_param;
   std::string m_mqtt_password_param;
+  float m_volt_multiplier_param;
   bool m_settings_changed;
 
   unsigned long m_previous_setup_pin_poll_time;

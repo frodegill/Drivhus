@@ -4,6 +4,7 @@
 
 #include "global.h"
 #include "network.h"
+#include "settings.h"
 #include "webserver.h"
 
 
@@ -26,7 +27,7 @@ void Volt::loop() {
 
   if ((m_previous_sampling_time+POLL_INTERVAL_MS)<current_time) {
     m_previous_sampling_time = current_time;
-    m_volt = analogRead(m_pin)/4095.0f * MAX_VOLT;
+    m_volt = analogRead(m_pin)/4095.0f * MAX_VOLT * ::getSettings()->getVoltMultiplier();
     ::getNetwork()->getWebServer()->updateVolt(m_volt);
   }
 }

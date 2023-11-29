@@ -64,7 +64,7 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
 <tr><td>Indoor light</td><td><span id="ILIGHT">%ILIGHT%</span><span>&nbsp;%%</span></td></tr>
 <tr><td>Outdoor temp</td><td><span id="OTEMP">%OTEMP%</span><span>&nbsp;C</span></td></tr>
 <tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span><span>&nbsp;%%RH</span></td></tr>
-<tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span></td></tr>
+<tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span><span id="VM">%VM%</span></td></tr>
 </table>
 </div>
 </body>
@@ -81,7 +81,9 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
   function onOpen(event){}
   function onClose(event){setTimeout(initWebSocket, 2000);}
   function onMessage(event) {
-    if (event.data.startsWith('SV') || event.data.startsWith('NS')){
+    if (event.data.startsWith('VM')){
+      document.getElementById(event.data.substring(0,2)).innerHTML = event.data.substring(2);
+    } else if (event.data.startsWith('SV') || event.data.startsWith('NS')){
       document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
     } else if (event.data.startsWith('CSI') || event.data.startsWith('SIX') || event.data.startsWith('NIX')){
       document.getElementById(event.data.substring(0,3)).innerHTML = event.data.substring(3);
@@ -99,16 +101,11 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
         elm.setAttribute('hidden', 'hidden')
       }
     } else if (event.data.startsWith('MSG')) {
-      console.log(event.data);
       var elm = document.getElementById('MSG');
-      console.log(elm);
       elm.innerHTML = event.data.substring(3);
-      console.log(event.data.substring(3));
       if (event.data.length == 3) { //'MSG' with no value
-        console.log('hidden');
         elm.setAttribute('hidden', 'hidden')
       } else {
-        console.log('shown');
         elm.removeAttribute('hidden');
       }
     } else {
@@ -118,6 +115,7 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
   function onLoad(event){initWebSocket();}
   function updateSetup(){websocket.send('SETUP'+elmValue('SSID')+'\n'+elmValue('SSID_PASSWORD')+'\n'+elmValue('MQTT_SERVER')+'\n'+elmValue('MQTT_PORT')+'\n'+elmValue('MQTT_ID')+'\n'+elmValue('MQTT_USERNAME')+'\n'+elmValue('MQTT_PASSWORD'));}
   function updateSensorId(sensorIdHex){websocket.send('NSI'+sensorIdHex+elmValue('SO'+sensorIdHex));}
+  function updateVoltMultiplier(){websocket.send('VM'+elmValue('VOLT_MULTIPLIER'));}
   function elmValue(elmId){return document.getElementById(elmId).value;}
 </script>
 </html>
@@ -186,6 +184,7 @@ void WebServer::updateSetupMode() {
     if (unused_sensor_id != RS485::UNDEFINED_ID) {
       updateNewSensorIdButtons(unused_sensor_id);
     }
+    notifyClients("VM", generateVoltMultiplierCalibration());
   } 
 }
 
@@ -272,6 +271,10 @@ void WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
       uint8_t old_id = (value&0xFF00)>>8;
       uint8_t new_id = (value&0x00FF);
       ::getRS485()->setSensorShouldBeReassigned(old_id, new_id);
+    } else if (std::strncmp("VM", data_str, 2)==0) {
+      float value = std::stof(std::string(data_str+2));
+      ::getSettings()->setVoltMultiplier(value/Volt::MAX_VOLT);
+      ::getSettings()->setShouldFlushSettings();
     }
   }
 }
@@ -306,6 +309,8 @@ String WebServer::processor(const String& var){
     return String(::getNetwork()->getWebServer()->getOutdoorHumid(), 1);
   } else if (var == "VOLT") {
     return String(::getNetwork()->getWebServer()->getVolt(), 2);
+  } else if (var == "VM") {
+    return String(::getNetwork()->getWebServer()->generateVoltMultiplierCalibration().c_str());
   } else if (::getSettings()->isInSetupMode()) {
     if (var == "SSID") {
       return String(::getSettings()->getSSID().c_str());
@@ -400,6 +405,14 @@ std::string WebServer::generateSelectOptions(uint8_t sensor_id) const {
   }
   ss << "</select><button onCLick=\"updateSensorId('" << ::uint8ToHex(sensor_id) << "')\">Set new sensor ID</button>";
   return ss.str();
+}
+
+std::string WebServer::generateVoltMultiplierCalibration() const {
+  if (!::getSettings()->isInSetupMode()) {
+    return "";
+  }
+
+  return "&nbsp;<input type=\"number\" id=\"VOLT_MULTIPLIER\" min=\"0.0\" max=\"14.5\" step=\"0.1\" value=\"%VOLT_MULTIPLIER%\">V <button onCLick=\"updateVoltMultiplier()\">Calibrate</button>";
 }
 
 void WebServer::checkIfWarningMessageShouldBeShown() {

@@ -10,6 +10,7 @@
 
 Settings::Settings()
 : m_mqtt_serverport_param(Mqtt::MQTT_DEFAULT_PORT),
+  m_volt_multiplier_param(1.0f),
   m_settings_changed(false),
   m_previous_setup_pin_poll_time(0L),
   m_in_setup_mode(false),
@@ -22,7 +23,8 @@ bool Settings::init() {
 
   EEPROM.begin(1 + 
                MAX_SSID_LENGTH+1 + MAX_SSID_PASSWORD_LENGTH+1 +
-               MAX_MQTT_SERVERNAME_LENGTH+1 + MAX_MQTT_SERVERPORT_LENGTH+1 + MAX_MQTT_SERVERID_LENGTH+1 + MAX_MQTT_USERNAME_LENGTH+1 + MAX_MQTT_PASSWORD_LENGTH+1);
+               MAX_MQTT_SERVERNAME_LENGTH+1 + MAX_MQTT_SERVERPORT_LENGTH+1 + MAX_MQTT_SERVERID_LENGTH+1 + MAX_MQTT_USERNAME_LENGTH+1 + MAX_MQTT_PASSWORD_LENGTH+1 +
+               VOLT_MULTIPLIER_LENGTH+1);
 
   readPersistentParams();
   m_in_setup_mode = isInSetupMode();
@@ -87,6 +89,7 @@ void Settings::readPersistentParams() {
     m_mqtt_serverid_param = DEFAULT_SERVERID;
     m_mqtt_username_param[0] = 0;
     m_mqtt_password_param[0] = 0;
+    m_volt_multiplier_param = 1.0f;
   }
   else
   {
@@ -101,6 +104,11 @@ void Settings::readPersistentParams() {
     readPersistentString(m_mqtt_serverid_param, MAX_MQTT_SERVERID_LENGTH, adr);
     readPersistentString(m_mqtt_username_param, MAX_MQTT_USERNAME_LENGTH, adr);
     readPersistentString(m_mqtt_password_param, MAX_MQTT_PASSWORD_LENGTH, adr);
+
+    std::string volt_multiplier;
+    readPersistentString(volt_multiplier, VOLT_MULTIPLIER_LENGTH, adr);
+    uint16_t tmp_volt_multiplier = std::stoi(volt_multiplier)&0xFFFF;
+    m_volt_multiplier_param = tmp_volt_multiplier/256.0f;
   }
 }
 
@@ -131,6 +139,13 @@ bool Settings::writePersistentParams() {
   writePersistentString(m_mqtt_serverid_param, MAX_MQTT_SERVERID_LENGTH, adr);
   writePersistentString(m_mqtt_username_param, MAX_MQTT_USERNAME_LENGTH, adr);
   writePersistentString(m_mqtt_password_param, MAX_MQTT_PASSWORD_LENGTH, adr);
+
+  char volt_multiplier[VOLT_MULTIPLIER_LENGTH+1];
+  uint16_t tmp_volt_multiplier = m_volt_multiplier_param*256.0f;
+  sprintf(volt_multiplier, "%hu", tmp_volt_multiplier);
+  volt_multiplier[VOLT_MULTIPLIER_LENGTH] = 0;
+  writePersistentString(volt_multiplier, VOLT_MULTIPLIER_LENGTH, adr);
+
   return EEPROM.commit();
 }
 
