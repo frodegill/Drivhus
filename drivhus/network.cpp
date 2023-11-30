@@ -74,14 +74,19 @@ bool Network::isWiFiConnected() {
 }
 
 void Network::activateWiFiStation() {
-  Serial.println("activateWiFiStation");
-  deactivateWiFi();
-  m_dns_server.stop();
-  WiFi.enableAP(false);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(::getSettings()->getSSID().c_str(), ::getSettings()->getSSIDPassword().c_str());
-  m_wifi_accesspoint_mode_since = millis();
-  m_is_in_accesspoint_mode = false;
+  if (::getSettings()->getSSID().empty()) {
+    Serial.println("No SSID configured for STA");
+    activateWiFiAccessPoint();
+  } else {
+    Serial.println("activateWiFiStation");
+    deactivateWiFi();
+    m_dns_server.stop();
+    WiFi.enableAP(false);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(::getSettings()->getSSID().c_str(), ::getSettings()->getSSIDPassword().c_str());
+    m_wifi_accesspoint_mode_since = millis();
+    m_is_in_accesspoint_mode = false;
+  }
 }
 
 void Network::activateWiFiAccessPoint() {
