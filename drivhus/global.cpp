@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "cd74hc4067.h"
 #include "dht22.h"
 #include "ky018.h"
 #include "network.h"
@@ -10,6 +11,14 @@
 #include "settings.h"
 #include "volt.h"
 
+
+std::shared_ptr<CD74HC4067> g_cd74hc4067;
+[[nodiscard]] std::shared_ptr<CD74HC4067> getCD74HC4067() {
+  if (!g_cd74hc4067) {
+    g_cd74hc4067 = std::make_shared<CD74HC4067>(CD74HC4067_S0_PIN, CD74HC4067_S1_PIN, CD74HC4067_S2_PIN, CD74HC4067_S3_PIN);
+  }
+  return g_cd74hc4067;
+}
 
 std::shared_ptr<DHT22> g_indoor_dht22;
 [[nodiscard]] std::shared_ptr<DHT22> getIndoorDHT22() {

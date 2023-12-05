@@ -25,6 +25,8 @@ public:
   static constexpr uint8_t DRIVHUS_MIN_ID = 1;
   static constexpr uint8_t DRIVHUS_MAX_ID = 15;
 
+  static constexpr uint8_t SENSOR_COUNT = DRIVHUS_MAX_ID - DRIVHUS_MIN_ID + 1;
+
 public:
   RS485();
   [[nodiscard]] bool init();
