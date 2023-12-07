@@ -3,10 +3,13 @@
 #include <iomanip>
 #include <sstream>
 
+#include <Timezone.h>
+
 #include "cd74hc4067.h"
 #include "dht22.h"
 #include "ky018.h"
 #include "network.h"
+#include "ntp.h"
 #include "rs485.h"
 #include "settings.h"
 #include "volt.h"
@@ -50,6 +53,17 @@ std::shared_ptr<Network> g_network;
     g_network = std::make_shared<Network>();
   }
   return g_network;
+}
+
+std::shared_ptr<NTP> g_ntp;
+[[nodiscard]] std::shared_ptr<NTP> getNTP() {
+  if (!g_ntp) {
+    //Central European Time (Frankfurt, Paris)
+    TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120};     //Central European Summer Time
+    TimeChangeRule CET = {"CET ", Last, Sun, Oct, 3, 60};       //Central European Standard Time
+    g_ntp = std::make_shared<NTP>(Timezone(CEST, CET));
+  }
+  return g_ntp;
 }
 
 std::shared_ptr<RS485> g_rs485;

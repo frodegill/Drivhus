@@ -40,6 +40,9 @@ class RS485; //Soil sensors bus
 class Network;
 [[nodiscard]] std::shared_ptr<Network> getNetwork();
 
+class NTP;
+[[nodiscard]] std::shared_ptr<NTP> getNTP();
+
 class Volt; //Volt sensor
 [[nodiscard]] std::shared_ptr<Volt> getVolt();
 

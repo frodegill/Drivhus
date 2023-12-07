@@ -4,6 +4,7 @@
 #include "dht22.h"
 #include "ky018.h"
 #include "network.h"
+#include "ntp.h"
 #include "rs485.h"
 #include "settings.h"
 #include "volt.h"
@@ -19,6 +20,7 @@ void setup() {
       !::getKY018()->init() ||
       !::getVolt()->init() ||
       !::getNetwork()->init() ||
+      !::getNTP()->init() ||
       !::getRS485()->init()) {
     Serial.println("Setup failed");
   }
@@ -33,6 +35,7 @@ void loop() {
   ::getKY018()->loop();
   ::getVolt()->loop();
   ::getNetwork()->loop();
+  ::getNTP()->loop();
   ::getRS485()->loop();
 
   delay(200);
