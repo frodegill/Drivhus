@@ -19,6 +19,8 @@ static constexpr uint8_t RS485_TX_PIN     = 27;
 static constexpr uint8_t RS485_ENABLE_PIN = 14;
 static constexpr uint8_t SETUP_MODE_ENABLE_PIN = 33;
 static constexpr uint8_t VOLT_PIN         = 34;
+static constexpr uint8_t WATERLEVEL_LOW_PIN = 36;
+static constexpr uint8_t WATERLEVEL_HIGH_PIN = 39;
 
 
 class Settings;
