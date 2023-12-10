@@ -3,8 +3,6 @@
 #include <Arduino.h>
 
 #include "global.h"
-#include "network.h"
-#include "webserver.h"
 
 
 CD74HC4067::CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin)
