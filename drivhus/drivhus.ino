@@ -8,6 +8,7 @@
 #include "rs485.h"
 #include "settings.h"
 #include "volt.h"
+#include "waterlevel.h"
 
 
 void setup() {
@@ -21,7 +22,8 @@ void setup() {
       !::getVolt()->init() ||
       !::getNetwork()->init() ||
       !::getNTP()->init() ||
-      !::getRS485()->init()) {
+      !::getRS485()->init() ||
+      !::getWaterlevel()->init()) {
     Serial.println("Setup failed");
   }
 }
@@ -37,6 +39,7 @@ void loop() {
   ::getNetwork()->loop();
   ::getNTP()->loop();
   ::getRS485()->loop();
+  ::getWaterlevel()->loop();
 
   delay(200);
 }

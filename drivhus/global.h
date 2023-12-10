@@ -7,19 +7,20 @@
 
 
 static constexpr uint8_t CD74HC4067_COMMON_PIN = 32;
-static constexpr uint8_t CD74HC4067_S0_PIN = 26;
-static constexpr uint8_t CD74HC4067_S1_PIN = 25;
-static constexpr uint8_t CD74HC4067_S2_PIN = 18;
-static constexpr uint8_t CD74HC4067_S3_PIN = 5;
-static constexpr uint8_t DHT22_INDOOR_PIN = 23;
-static constexpr uint8_t DHT22_OUTDOOR_PIN = 19;
-static constexpr uint8_t KY018_PIN        = 35;
-static constexpr uint8_t RS485_RX_PIN     = 13;
-static constexpr uint8_t RS485_TX_PIN     = 27;
-static constexpr uint8_t RS485_ENABLE_PIN = 14;
+static constexpr uint8_t CD74HC4067_S0_PIN   = 26;
+static constexpr uint8_t CD74HC4067_S1_PIN   = 25;
+static constexpr uint8_t CD74HC4067_S2_PIN   = 18;
+static constexpr uint8_t CD74HC4067_S3_PIN   = 5;
+static constexpr uint8_t DHT22_INDOOR_PIN    = 23;
+static constexpr uint8_t DHT22_OUTDOOR_PIN   = 19;
+static constexpr uint8_t KY018_PIN           = 35;
+static constexpr uint8_t RS485_RX_PIN        = 13;
+static constexpr uint8_t RS485_TX_PIN        = 27;
+static constexpr uint8_t RS485_ENABLE_PIN    = 14;
 static constexpr uint8_t SETUP_MODE_ENABLE_PIN = 33;
-static constexpr uint8_t VOLT_PIN         = 34;
-static constexpr uint8_t WATERLEVEL_LOW_PIN = 36;
+static constexpr uint8_t VOLT_PIN            = 34;
+static constexpr uint8_t WATER_VALVE_PIN     = 22;
+static constexpr uint8_t WATERLEVEL_LOW_PIN  = 36;
 static constexpr uint8_t WATERLEVEL_HIGH_PIN = 39;
 
 
@@ -47,6 +48,9 @@ class NTP;
 
 class Volt; //Volt sensor
 [[nodiscard]] std::shared_ptr<Volt> getVolt();
+
+class Waterlevel; //Waterlevel sensors
+[[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel();
 
 
 std::string floatToString(const float& value, uint8_t precision);

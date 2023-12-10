@@ -13,6 +13,7 @@
 #include "rs485.h"
 #include "settings.h"
 #include "volt.h"
+#include "waterlevel.h"
 
 
 std::shared_ptr<CD74HC4067> g_cd74hc4067;
@@ -88,6 +89,14 @@ std::shared_ptr<Volt> g_volt;
     g_volt = std::make_shared<Volt>(VOLT_PIN);
   }
   return g_volt;
+}
+
+std::shared_ptr<Waterlevel> g_waterlevel;
+[[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel() {
+  if (!g_waterlevel) {
+    g_waterlevel = std::make_shared<Waterlevel>(WATERLEVEL_LOW_PIN, WATERLEVEL_HIGH_PIN, WATER_VALVE_PIN);
+  }
+  return g_waterlevel;
 }
 
 std::string floatToString(const float& value, uint8_t precision) {
