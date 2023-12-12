@@ -19,7 +19,7 @@
 std::shared_ptr<CD74HC4067> g_cd74hc4067;
 [[nodiscard]] std::shared_ptr<CD74HC4067> getCD74HC4067() {
   if (!g_cd74hc4067) {
-    g_cd74hc4067 = std::make_shared<CD74HC4067>(CD74HC4067_S0_PIN, CD74HC4067_S1_PIN, CD74HC4067_S2_PIN, CD74HC4067_S3_PIN);
+    g_cd74hc4067 = std::make_shared<CD74HC4067>(O_CD74HC4067_S0_PIN, O_CD74HC4067_S1_PIN, O_CD74HC4067_S2_PIN, O_CD74HC4067_S3_PIN);
   }
   return g_cd74hc4067;
 }
@@ -27,7 +27,7 @@ std::shared_ptr<CD74HC4067> g_cd74hc4067;
 std::shared_ptr<DHT22> g_indoor_dht22;
 [[nodiscard]] std::shared_ptr<DHT22> getIndoorDHT22() {
   if (!g_indoor_dht22) {
-    g_indoor_dht22 = std::make_shared<DHT22>(0, DHT22_INDOOR_PIN);
+    g_indoor_dht22 = std::make_shared<DHT22>(0, I_DHT22_INDOOR_PIN);
   }
   return g_indoor_dht22;
 }
@@ -35,7 +35,7 @@ std::shared_ptr<DHT22> g_indoor_dht22;
 std::shared_ptr<DHT22> g_outdoor_dht22;
 [[nodiscard]] std::shared_ptr<DHT22> getOutdoorDHT22() {
   if (!g_outdoor_dht22) {
-    g_outdoor_dht22 = std::make_shared<DHT22>(1, DHT22_OUTDOOR_PIN);
+    g_outdoor_dht22 = std::make_shared<DHT22>(1, I_DHT22_OUTDOOR_PIN);
   }
   return g_outdoor_dht22;
 }
@@ -43,7 +43,7 @@ std::shared_ptr<DHT22> g_outdoor_dht22;
 std::shared_ptr<KY018> g_ky018;
 [[nodiscard]] std::shared_ptr<KY018> getKY018() {
   if (!g_ky018) {
-    g_ky018 = std::make_shared<KY018>(KY018_PIN);
+    g_ky018 = std::make_shared<KY018>(I_KY018_PIN);
   }
   return g_ky018;
 }
@@ -70,7 +70,7 @@ std::shared_ptr<NTP> g_ntp;
 std::shared_ptr<RS485> g_rs485;
 [[nodiscard]] std::shared_ptr<RS485> getRS485() {
   if (!g_rs485) {
-    g_rs485 = std::make_shared<RS485>();
+    g_rs485 = std::make_shared<RS485>(I_RS485_RX_PIN, O_RS485_TX_PIN, O_RS485_ENABLE_PIN);
   }
   return g_rs485;
 }
@@ -78,7 +78,7 @@ std::shared_ptr<RS485> g_rs485;
 std::shared_ptr<Settings> g_settings;
 std::shared_ptr<Settings> getSettings() {
   if (!g_settings) {
-    g_settings = std::make_shared<Settings>();
+    g_settings = std::make_shared<Settings>(I_SETUP_MODE_ENABLE_PIN);
   }
   return g_settings;
 }
@@ -86,7 +86,7 @@ std::shared_ptr<Settings> getSettings() {
 std::shared_ptr<Volt> g_volt;
 [[nodiscard]] std::shared_ptr<Volt> getVolt() {
   if (!g_volt) {
-    g_volt = std::make_shared<Volt>(VOLT_PIN);
+    g_volt = std::make_shared<Volt>(I_VOLT_PIN);
   }
   return g_volt;
 }
@@ -94,7 +94,7 @@ std::shared_ptr<Volt> g_volt;
 std::shared_ptr<Waterlevel> g_waterlevel;
 [[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel() {
   if (!g_waterlevel) {
-    g_waterlevel = std::make_shared<Waterlevel>(WATERLEVEL_LOW_PIN, WATERLEVEL_HIGH_PIN, WATER_VALVE_PIN);
+    g_waterlevel = std::make_shared<Waterlevel>(I_WATERLEVEL_LOW_PIN, I_WATERLEVEL_HIGH_PIN, O_WATER_VALVE_PIN);
   }
   return g_waterlevel;
 }

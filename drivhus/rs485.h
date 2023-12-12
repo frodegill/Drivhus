@@ -28,7 +28,7 @@ public:
   static constexpr uint8_t SENSOR_COUNT = DRIVHUS_MAX_ID - DRIVHUS_MIN_ID + 1;
 
 public:
-  RS485();
+  RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin);
   [[nodiscard]] bool init();
   void loop();
 
@@ -49,6 +49,9 @@ private:
   [[nodiscard]] bool setNewSensorId(uint8_t old_id, uint8_t new_id, bool force=false);
 
 private:
+  uint8_t m_rx_pin;
+  uint8_t m_tx_pin;
+  uint8_t m_enable_pin;
   std::unique_ptr<ModbusRTUMaster> m_modbus;
 
   std::list<std::pair<uint8_t, uint8_t>> m_reassign_sensor_ids;

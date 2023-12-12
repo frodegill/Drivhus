@@ -7,8 +7,11 @@
 #include "network.h"
 
 
-RS485::RS485()
-: m_previous_complete_scan_time(0L),
+RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
+: m_rx_pin(rx_pin),
+  m_tx_pin(tx_pin),
+  m_enable_pin(enable_pin),
+  m_previous_complete_scan_time(0L),
   m_previous_scanned_sensor_id(UNDEFINED_ID),
   m_performed_full_scan(false) {
   int i;
@@ -22,8 +25,8 @@ RS485::RS485()
 }
 
 bool RS485::init() {
-  Serial2.begin(SERIAL_BAUD, SERIAL_8E1, RS485_RX_PIN, RS485_TX_PIN);
-  m_modbus = std::unique_ptr<ModbusRTUMaster>(new ModbusRTUMaster(Serial2, RS485_ENABLE_PIN)); // serial port, driver enable pin for rs-485 (optional)
+  Serial2.begin(SERIAL_BAUD, SERIAL_8E1, m_rx_pin, m_tx_pin);
+  m_modbus = std::unique_ptr<ModbusRTUMaster>(new ModbusRTUMaster(Serial2, m_enable_pin)); // serial port, driver enable pin for rs-485 (optional)
   m_modbus->begin(Serial2.baudRate());
   m_modbus->setTimeout(MODBUS_TIMEOUT);
   return true;

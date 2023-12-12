@@ -26,7 +26,7 @@ public:
   static constexpr uint8_t VOLT_MULTIPLIER_LENGTH     =  5; //5 digits, actually "0"-"65535". float value is found by dividing by 256 (so 8bit.8bit)
 
 public:
-  Settings();
+  Settings(uint8_t pin);
   [[nodiscard]] bool init();
   void loop();
 
@@ -63,6 +63,9 @@ private:
 
   void checkIfSettingsShouldBeFlushed();
   void flushSettings();
+
+private:
+  uint8_t m_pin;
 
 public:
   std::string m_ssid_param;

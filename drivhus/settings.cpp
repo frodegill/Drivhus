@@ -8,8 +8,9 @@
 #include "network.h"
 
 
-Settings::Settings()
-: m_mqtt_serverport_param(Mqtt::MQTT_DEFAULT_PORT),
+Settings::Settings(uint8_t pin)
+: m_pin(pin),
+  m_mqtt_serverport_param(Mqtt::MQTT_DEFAULT_PORT),
   m_volt_multiplier_param(1.0f),
   m_settings_changed(false),
   m_previous_setup_pin_poll_time(0L),
@@ -18,7 +19,7 @@ Settings::Settings()
 }
 
 bool Settings::init() {
-  pinMode(SETUP_MODE_ENABLE_PIN, INPUT_PULLUP);
+  pinMode(m_pin, INPUT_PULLUP);
   analogReadResolution(12);
 
   EEPROM.begin(1 + 
@@ -49,7 +50,7 @@ bool Settings::isInSetupMode() {
   const unsigned long current_time = millis();
   if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
     m_previous_setup_pin_poll_time = current_time;
-    m_in_setup_mode = digitalRead(SETUP_MODE_ENABLE_PIN)==LOW;
+    m_in_setup_mode = digitalRead(m_pin)==LOW;
   }
   return m_in_setup_mode;
 }
