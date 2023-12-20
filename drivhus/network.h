@@ -1,9 +1,13 @@
 #ifndef _NETWORK_H_
 #define _NETWORK_H_
 
+#ifdef TESTING
+#else
+# include <DNSServer.h>
+# include <WiFi.h>
+#endif
+
 #include <memory>
-#include <DNSServer.h>
-#include <WiFi.h>
 
 #include "webserver.h"
 

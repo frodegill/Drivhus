@@ -1,2 +1,5 @@
 fp-info-cache
 *pcb-backups/
+drivhus_compiletest
+*.dep
+*.o

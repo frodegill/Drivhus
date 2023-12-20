@@ -163,7 +163,7 @@ void WebServer::loop() {
   m_ws->cleanupClients();
 }
 
-void WebServer::onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+void WebServer::onEvent([[maybe_unused]] AsyncWebSocket* server, [[maybe_unused]] AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
   switch (type) {
     case WS_EVT_DATA:
       handleWebSocketMessage(arg, data, len); break;

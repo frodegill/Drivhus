@@ -1,11 +1,16 @@
 #ifndef _WEBSERVER_H_
 #define _WEBSERVER_H_
 
+#ifdef TESTING
+# include "testing.h"
+#else
+# include <ESPAsyncWebSrv.h>
+#endif
+
 #include <list>
 #include <memory>
 #include <mutex>
 #include <set>
-#include <ESPAsyncWebSrv.h>
 
 
 class WebServer

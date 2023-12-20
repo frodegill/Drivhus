@@ -18,8 +18,7 @@ bool Network::init() {
   } else {
     activateWiFiStation();
   }
-  m_webserver->init();
-  return true;
+  return m_webserver->init();
 }
 
 void Network::loop() {

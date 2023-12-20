@@ -1,7 +1,11 @@
 #ifndef _WATERLEVEL_H_
 #define _WATERLEVEL_H_
 
-#include <Arduino.h>
+#ifdef TESTING
+# include "testing.h"
+#else
+# include <Arduino.h>
+#endif
 
 
 class Waterlevel

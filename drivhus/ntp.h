@@ -1,11 +1,15 @@
 #ifndef _NTP_H_
 #define _NTP_H_
 
-#include <Arduino.h>
+#ifdef TESTING
+# include "testing.h"
+#else
+# include <Arduino.h>
+# include <WiFiUdp.h>
+# include <Timezone.h>
+#endif
 
 #include <memory>
-#include <WiFiUdp.h>
-#include <Timezone.h>
 
 
 class NTP

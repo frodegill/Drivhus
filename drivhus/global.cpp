@@ -1,9 +1,12 @@
 #include "global.h"
 
+#ifdef TESTING
+#else
+# include <Timezone.h>
+#endif
+
 #include <iomanip>
 #include <sstream>
-
-#include <Timezone.h>
 
 #include "cd74hc4067.h"
 #include "dht22.h"

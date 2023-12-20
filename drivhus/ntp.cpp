@@ -1,7 +1,11 @@
 #include "ntp.h"
 
+#ifdef TESTING
+#else
+# include <TimeLib.h>
+#endif
+
 #include <cstring>
-#include <TimeLib.h>
 
 #include "global.h"
 

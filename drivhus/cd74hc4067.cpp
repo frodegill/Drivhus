@@ -1,6 +1,10 @@
 #include "cd74hc4067.h"
 
-#include <Arduino.h>
+#ifdef TESTING
+# include "testing.h"
+#else
+# include <Arduino.h>
+#endif
 
 #include "global.h"
 

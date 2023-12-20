@@ -29,8 +29,6 @@ void setup() {
 }
 
 void loop() {
-  unsigned long current_time = millis();
-
   ::getSettings()->loop();
   ::getIndoorDHT22()->loop();
   ::getOutdoorDHT22()->loop();

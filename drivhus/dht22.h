@@ -1,8 +1,11 @@
 #ifndef _DHT22_H_
 #define _DHT22_H_
 
+#ifdef TESTING
+# include "testing.h"
+#else
 # include <DHTesp.h>           // Library: DHT_sensor_library_for_ESPx
-
+#endif
 
 class DHT22
 {

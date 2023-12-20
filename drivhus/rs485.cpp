@@ -14,11 +14,10 @@ RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
   m_previous_complete_scan_time(0L),
   m_previous_scanned_sensor_id(UNDEFINED_ID),
   m_performed_full_scan(false) {
-  int i;
-  for (i=0; i<8; i++) {
+  for (uint32_t i=0; i<SENSOR_PRESENT_UINT32_NEEDED; i++) {
     m_sensor_present[i] = 0;
   }
-  for (i=0; i<15; i++) {
+  for (uint8_t i=0; i<SENSOR_COUNT; i++) {
     m_sensor_temp[i] = 0x00;
     m_sensor_humidity[i] = 0x00;
   }

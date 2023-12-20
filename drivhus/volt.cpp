@@ -1,6 +1,9 @@
 #include "volt.h"
 
-#include <Arduino.h>
+#ifdef TESTING
+#else
+# include <Arduino.h>
+#endif
 
 #include "global.h"
 #include "network.h"

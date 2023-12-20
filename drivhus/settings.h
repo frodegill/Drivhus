@@ -1,7 +1,12 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
-#include <EEPROM.h>
+#ifdef TESTING
+# include "testing.h"
+#else
+# include <EEPROM.h>
+#endif
+
 #include <mutex>
 #include <string>
 
