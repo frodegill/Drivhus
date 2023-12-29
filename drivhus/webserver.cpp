@@ -258,7 +258,7 @@ void WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
           case 0: ::getSettings()->setSSID(line); break;
           case 1: ::getSettings()->setSSIDPassword(line); break;
           case 2: ::getSettings()->setMQTTServername(line); break;
-          case 3: ::getSettings()->setMQTTPort(std::stoi(line)&0xFFFF); break;
+          case 3: ::getSettings()->setMQTTPort(static_cast<uint16_t>(std::stoi(line)&0xFFFF)); break;
           case 4: ::getSettings()->setMQTTServerId(line); break;
           case 5: ::getSettings()->setMQTTUsername(line); break;
           case 6: ::getSettings()->setMQTTPassword(line); break;
@@ -292,10 +292,10 @@ String WebServer::processor(const String& var){
     uint8_t sensor_id = ::getNetwork()->getWebServer()->getUnusedSensorId();
     return String(::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
   } else if (var.startsWith("SV")) {
-    uint8_t sensor_id = std::stoul(var.substring(2).c_str(), nullptr, 16);
+    uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
     return String(::getNetwork()->getWebServer()->getSensorValueAsString(sensor_id).c_str());
   } else if (var.startsWith("NS")) {
-    uint8_t sensor_id = std::stoul(var.substring(2).c_str(), nullptr, 16);
+    uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
     return String(::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
   } else if (var == "ITEMP") {
     return String(::getNetwork()->getWebServer()->getIndoorTemp(), 1);

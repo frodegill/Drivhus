@@ -100,7 +100,7 @@ void Settings::readPersistentParams() {
 
     std::string port;
     readPersistentString(port, MAX_MQTT_SERVERPORT_LENGTH, adr);
-    m_mqtt_serverport_param = std::stoi(port)&0xFFFF;
+    m_mqtt_serverport_param = static_cast<uint16_t>(std::stoi(port)&0xFFFF);
 
     readPersistentString(m_mqtt_serverid_param, MAX_MQTT_SERVERID_LENGTH, adr);
     readPersistentString(m_mqtt_username_param, MAX_MQTT_USERNAME_LENGTH, adr);
@@ -108,7 +108,7 @@ void Settings::readPersistentParams() {
 
     std::string volt_multiplier;
     readPersistentString(volt_multiplier, VOLT_MULTIPLIER_LENGTH, adr);
-    uint16_t tmp_volt_multiplier = std::stoi(volt_multiplier)&0xFFFF;
+    uint16_t tmp_volt_multiplier = static_cast<uint16_t>(std::stoi(volt_multiplier)&0xFFFF);
     m_volt_multiplier_param = tmp_volt_multiplier/256.0f;
   }
 }
@@ -142,7 +142,7 @@ bool Settings::writePersistentParams() {
   writePersistentString(m_mqtt_password_param, MAX_MQTT_PASSWORD_LENGTH, adr);
 
   char volt_multiplier[VOLT_MULTIPLIER_LENGTH+1];
-  uint16_t tmp_volt_multiplier = m_volt_multiplier_param*256.0f;
+  uint16_t tmp_volt_multiplier = static_cast<uint16_t>(m_volt_multiplier_param*256.0f);
   sprintf(volt_multiplier, "%hu", tmp_volt_multiplier);
   volt_multiplier[VOLT_MULTIPLIER_LENGTH] = 0;
   writePersistentString(volt_multiplier, VOLT_MULTIPLIER_LENGTH, adr);

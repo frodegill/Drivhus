@@ -60,7 +60,7 @@ void NTP::sendNTPpacket() {
   std::memset(m_packet_buffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
   // (see URL above for details on the packets)
-  m_packet_buffer[0] = 0b11100011;   // LI, Version, Mode
+  m_packet_buffer[0] = 0xE3;  // LI, Version, Mode
   m_packet_buffer[1] = 0;     // Stratum, or type of clock
   m_packet_buffer[2] = 6;     // Polling Interval
   m_packet_buffer[3] = 0xEC;  // Peer Clock Precision

@@ -14,7 +14,7 @@ DEPS = $(OBJECTS:.o=.dep)
 
 ######## compiler- and linker settings #########
 CXX = g++
-CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -pipe -DTESTING -std=c++11
+CXXFLAGS = -I/usr/local/include -I/usr/include -W -Wall -Werror -Wpedantic -Wconversion -pipe -DTESTING -std=c++11
 
 ifdef DEBUG_INFO
  CXXFLAGS += -g -DDBG
