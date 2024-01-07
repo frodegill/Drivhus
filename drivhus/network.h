@@ -11,6 +11,7 @@
 
 #include "webserver.h"
 
+namespace Drivhus {
 
 class Network
 {
@@ -42,5 +43,7 @@ public:
   unsigned long m_wifi_accesspoint_mode_since;
   bool m_is_in_accesspoint_mode;
 };
+
+} //namespace
 
 #endif // _NETWORK_H_

@@ -11,6 +11,7 @@
 
 #include <memory>
 
+namespace Drivhus {
 
 class NTP
 {
@@ -43,5 +44,7 @@ private:
 
   unsigned long m_previous_ntp_request_time;
 };
+
+} //namespace
 
 #endif // _NTP_H_

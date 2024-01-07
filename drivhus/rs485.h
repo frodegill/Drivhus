@@ -14,6 +14,7 @@
 #include <set>
 #include <utility>
 
+namespace Drivhus {
 
 class RS485
 {
@@ -75,5 +76,7 @@ private:
 
   uint16_t tmp_holding_registers[2];
 };
+
+} //namespace
 
 #endif // _RS485_H_

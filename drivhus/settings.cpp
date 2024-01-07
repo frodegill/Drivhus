@@ -8,7 +8,7 @@
 #include "network.h"
 
 
-Settings::Settings(uint8_t pin)
+Drivhus::Settings::Settings(uint8_t pin)
 : m_pin(pin),
   m_mqtt_serverport_param(Mqtt::MQTT_DEFAULT_PORT),
   m_volt_multiplier_param(1.0f),
@@ -18,7 +18,7 @@ Settings::Settings(uint8_t pin)
   m_should_flush_settings(false) {
 }
 
-bool Settings::init() {
+bool Drivhus::Settings::init() {
   pinMode(m_pin, INPUT_PULLUP);
   analogReadResolution(12);
 
@@ -32,7 +32,7 @@ bool Settings::init() {
   return true;
 }
 
-void Settings::loop() {
+void Drivhus::Settings::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_setup_pin_poll_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_setup_pin_poll_time = current_time;
@@ -40,13 +40,13 @@ void Settings::loop() {
   
   bool previous_setup_mode = m_in_setup_mode;
   if (isInSetupMode() != previous_setup_mode) {
-    ::getNetwork()->getWebServer()->updateSetupMode();
+    Drivhus::getNetwork()->getWebServer()->updateSetupMode();
   }
 
   checkIfSettingsShouldBeFlushed();
 }
 
-bool Settings::isInSetupMode() {
+bool Drivhus::Settings::isInSetupMode() {
   const unsigned long current_time = millis();
   if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
     m_previous_setup_pin_poll_time = current_time;
@@ -55,12 +55,12 @@ bool Settings::isInSetupMode() {
   return m_in_setup_mode;
 }
 
-void Settings::setShouldFlushSettings() {
+void Drivhus::Settings::setShouldFlushSettings() {
   const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
   m_should_flush_settings = true;
 }
 
-void Settings::readPersistentString(std::string& s, int max_length, int& adr) {
+void Drivhus::Settings::readPersistentString(std::string& s, int max_length, int& adr) {
   std::vector<uint8_t> d;
   int i = 0;
   uint8_t c;
@@ -75,11 +75,11 @@ void Settings::readPersistentString(std::string& s, int max_length, int& adr) {
   s = std::string(d.begin(), d.end());
 }
 
-void Settings::readPersistentByte(uint8_t& b, int& adr) {
+void Drivhus::Settings::readPersistentByte(uint8_t& b, int& adr) {
   b = EEPROM.read(adr++);
 }
 
-void Settings::readPersistentParams() {
+void Drivhus::Settings::readPersistentParams() {
   int adr = 0;
   if (EEPROM_INITIALIZED_MARKER != EEPROM.read(adr++))
   {
@@ -113,7 +113,7 @@ void Settings::readPersistentParams() {
   }
 }
 
-void Settings::writePersistentString(const std::string& s, size_t max_length, int& adr) {
+void Drivhus::Settings::writePersistentString(const std::string& s, size_t max_length, int& adr) {
   for (size_t i=0; i<utf8ByteArrayLength(s, max_length); i++)
   {
     EEPROM.write(adr++, s.at(i));
@@ -121,11 +121,11 @@ void Settings::writePersistentString(const std::string& s, size_t max_length, in
   EEPROM.write(adr++, 0);
 }
 
-void Settings::writePersistentByte(uint8_t b, int& adr) {
+void Drivhus::Settings::writePersistentByte(uint8_t b, int& adr) {
   EEPROM.write(adr++, b);
 }
 
-bool Settings::writePersistentParams() {
+bool Drivhus::Settings::writePersistentParams() {
   int adr = 0;
   EEPROM.write(adr++, EEPROM_INITIALIZED_MARKER);
   writePersistentString(m_ssid_param, MAX_SSID_LENGTH, adr);
@@ -150,7 +150,7 @@ bool Settings::writePersistentParams() {
   return EEPROM.commit();
 }
 
-size_t Settings::utf8ByteArrayLength(const std::string& s, size_t max_length) {
+size_t Drivhus::Settings::utf8ByteArrayLength(const std::string& s, size_t max_length) {
   size_t len = 0;
   max_length = std::min(max_length, s.length());
 
@@ -180,14 +180,14 @@ size_t Settings::utf8ByteArrayLength(const std::string& s, size_t max_length) {
   return len;
 }
 
-void Settings::checkIfSettingsShouldBeFlushed() {
+void Drivhus::Settings::checkIfSettingsShouldBeFlushed() {
   const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
   if (m_should_flush_settings) {
     flushSettings();
   }
 }
 
-void Settings::flushSettings() {
+void Drivhus::Settings::flushSettings() {
   const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
   m_should_flush_settings = false;
 
@@ -199,6 +199,6 @@ void Settings::flushSettings() {
 
     std::stringstream ss;
     ss << "Flushing settings " << (result ? "SUCCEEDED" : "FAILED");
-    ::getNetwork()->getWebServer()->addWarningMessage(ss.str());
+    Drivhus::getNetwork()->getWebServer()->addWarningMessage(ss.str());
   }
 }

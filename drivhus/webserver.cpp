@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "global.h"
+#include "cd74hc4067.h"
 #include "network.h"
 #include "rs485.h"
 #include "settings.h"
@@ -34,7 +35,7 @@ MQTT port:<input type="number" id="MQTT_PORT" min="0" max="65535" value="%MQTT_P
 MQTT ID postfix:<input type="text" id="MQTT_ID" maxlength="32" value="%MQTT_ID%"><br>
 MQTT username:<input type="text" id="MQTT_USERNAME" maxlength="32" value="%MQTT_USERNAME%"><br>
 MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%MQTT_PASSWORD%"><br>
-<button onClick="updateSetup()">Submit</button>
+<button onClick="updateSetup()">Submit</button> <button onClick="testRelays()">Test relays</button>
 <hr>
 </div>
 <div>
@@ -114,6 +115,7 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
   }
   function onLoad(event){initWebSocket();}
   function updateSetup(){websocket.send('SETUP'+elmValue('SSID')+'\n'+elmValue('SSID_PASSWORD')+'\n'+elmValue('MQTT_SERVER')+'\n'+elmValue('MQTT_PORT')+'\n'+elmValue('MQTT_ID')+'\n'+elmValue('MQTT_USERNAME')+'\n'+elmValue('MQTT_PASSWORD'));}
+  function testRelays(){websocket.send('TR');}
   function updateSensorId(sensorIdHex){websocket.send('NSI'+sensorIdHex+elmValue('SO'+sensorIdHex));}
   function updateVoltMultiplier(){websocket.send('VM'+elmValue('VOLT_MULTIPLIER'));}
   function elmValue(elmId){return document.getElementById(elmId).value;}
@@ -122,16 +124,21 @@ MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%M
 )rawliteral";
 
 
-WebServer::WebServer()
+Drivhus::WebServer::WebServer()
 : m_is_showing_setup(false),
   m_light(0.0f),
   m_volt(0.0f),
-  m_warning_message_time(0L) {
+  m_warning_message_time(0L),
+  m_is_testing_relays(false),
+  m_relay_test_event_time(0L),
+  m_relay_test_index(0),
+  m_relay_test_on(false)
+{
   m_temp[0] = m_temp[1] = 0.0f,
   m_humid[0] = m_humid[1] = 0.0f;
 }
 
-bool WebServer::init() {
+bool Drivhus::WebServer::init() {
   m_server = std::unique_ptr<AsyncWebServer>(new AsyncWebServer(80));
   m_ws = std::unique_ptr<AsyncWebSocket>(new AsyncWebSocket("/ws"));
   m_ws->onEvent(WebServer::onEvent);
@@ -146,10 +153,14 @@ bool WebServer::init() {
   return true;
 }
 
-void WebServer::loop() {
+void Drivhus::WebServer::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_warning_message_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_warning_message_time = current_time;
+  }
+
+  if (m_is_testing_relays) {
+    updateRelayTest();
   }
 
   if (m_warning_message_time!=0L) {
@@ -163,7 +174,7 @@ void WebServer::loop() {
   m_ws->cleanupClients();
 }
 
-void WebServer::onEvent([[maybe_unused]] AsyncWebSocket* server, [[maybe_unused]] AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+void Drivhus::WebServer::onEvent([[maybe_unused]] AsyncWebSocket* server, [[maybe_unused]] AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
   switch (type) {
     case WS_EVT_DATA:
       handleWebSocketMessage(arg, data, len); break;
@@ -172,8 +183,8 @@ void WebServer::onEvent([[maybe_unused]] AsyncWebSocket* server, [[maybe_unused]
   }
 }
 
-void WebServer::updateSetupMode() {
-  bool tmp = ::getSettings()->isInSetupMode();
+void Drivhus::WebServer::updateSetupMode() {
+  bool tmp = Drivhus::getSettings()->isInSetupMode();
   if (m_is_showing_setup!=tmp) {
     notifyClients("SHOW_SETUP", tmp ? "" : "hidden");
     m_is_showing_setup = tmp;
@@ -188,10 +199,10 @@ void WebServer::updateSetupMode() {
   } 
 }
 
-void WebServer::updateSensor(uint8_t sensor_id) {
+void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
   updateSetupMode();
 
-  bool present = ::getRS485()->isSensorPresent(sensor_id);
+  bool present = Drivhus::getRS485()->isSensorPresent(sensor_id);
   if (present && m_present_sensors.find(sensor_id) == m_present_sensors.end()) {
     m_present_sensors.emplace(sensor_id);
   } else if (!present && m_present_sensors.find(sensor_id) != m_present_sensors.end()) {
@@ -199,7 +210,7 @@ void WebServer::updateSensor(uint8_t sensor_id) {
   }
 
   if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
-    notifyClients(std::string("SV")+::uint8ToHex(sensor_id), getSensorValueAsString(sensor_id));
+    notifyClients(std::string("SV")+Drivhus::uint8ToHex(sensor_id), getSensorValueAsString(sensor_id));
     updateNewSensorIdButtons(sensor_id);
   } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID && present) {
     notifyClients("SIX", getUnusedSensorIdsAsString().c_str());
@@ -209,11 +220,11 @@ void WebServer::updateSensor(uint8_t sensor_id) {
   notifyClients("CSI", std::to_string(sensor_id)); //Current Sensor ID
 }
 
-void WebServer::setSensorScanCompleted() {
+void Drivhus::WebServer::setSensorScanCompleted() {
   notifyClients("CSI", "-");
 }
 
-void WebServer::updateTempHumid(uint8_t id, float temp, float humid) {
+void Drivhus::WebServer::updateTempHumid(uint8_t id, float temp, float humid) {
   if (id < 2) {
     if (temp<(m_temp[id]*0.99f) || temp>(m_temp[id]*1.01f)) {
       m_temp[id] = temp;
@@ -226,26 +237,26 @@ void WebServer::updateTempHumid(uint8_t id, float temp, float humid) {
   }
 }
 
-void WebServer::updateLight(float light) {
+void Drivhus::WebServer::updateLight(float light) {
   if (light<(m_light*0.99f) || light>(m_light*1.01f)) {
     m_light = light;
     notifyClients("ILIGHT", String(m_light, 1).c_str());
   }
 }
 
-void WebServer::updateVolt(float volt) {
+void Drivhus::WebServer::updateVolt(float volt) {
   if (volt<(m_volt*0.99f) || volt>(m_volt*1.01f)) {
     m_volt = volt;
     notifyClients("VOLT", String(m_volt, 2).c_str());
   }
 }
 
-void WebServer::addWarningMessage(const std::string& msg) {
+void Drivhus::WebServer::addWarningMessage(const std::string& msg) {
   const std::lock_guard<std::recursive_mutex> lock(m_warning_messages_mutex);
   m_warning_messages.push_back(msg);
 }
 
-void WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
+void Drivhus::WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
   AwsFrameInfo* info = (AwsFrameInfo*)arg;
   if (info->final && info->index==0 && info->len==len && info->opcode==WS_TEXT) {
     const char* data_str = reinterpret_cast<const char*>(data);
@@ -255,77 +266,79 @@ void WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
       uint8_t i = 0;
       while (std::getline(is, line)) {
         switch(i++) {
-          case 0: ::getSettings()->setSSID(line); break;
-          case 1: ::getSettings()->setSSIDPassword(line); break;
-          case 2: ::getSettings()->setMQTTServername(line); break;
-          case 3: ::getSettings()->setMQTTPort(static_cast<uint16_t>(std::stoi(line)&0xFFFF)); break;
-          case 4: ::getSettings()->setMQTTServerId(line); break;
-          case 5: ::getSettings()->setMQTTUsername(line); break;
-          case 6: ::getSettings()->setMQTTPassword(line); break;
+          case 0: Drivhus::getSettings()->setSSID(line); break;
+          case 1: Drivhus::getSettings()->setSSIDPassword(line); break;
+          case 2: Drivhus::getSettings()->setMQTTServername(line); break;
+          case 3: Drivhus::getSettings()->setMQTTPort(static_cast<uint16_t>(std::stoi(line)&0xFFFF)); break;
+          case 4: Drivhus::getSettings()->setMQTTServerId(line); break;
+          case 5: Drivhus::getSettings()->setMQTTUsername(line); break;
+          case 6: Drivhus::getSettings()->setMQTTPassword(line); break;
         }
       }
-      ::getSettings()->setShouldFlushSettings();
+      Drivhus::getSettings()->setShouldFlushSettings();
+    } else if (len>=2 && std::strncmp("TR", data_str, 2)==0) {
+      Drivhus::getNetwork()->getWebServer()->activateRelayTests();
     } else if (len>=(3+2+2) && std::strncmp("NSI", data_str, 3)==0) {
       std::string s(data_str+3, 4);
       unsigned long value = std::stoul(s, nullptr, 16);
       uint8_t old_id = (value&0xFF00)>>8;
       uint8_t new_id = (value&0x00FF);
-      ::getRS485()->setSensorShouldBeReassigned(old_id, new_id);
+      Drivhus::getRS485()->setSensorShouldBeReassigned(old_id, new_id);
     } else if (std::strncmp("VM", data_str, 2)==0) {
       float value = std::stof(std::string(data_str+2));
-      ::getSettings()->setVoltMultiplier(value/Volt::MAX_VOLT);
-      ::getSettings()->setShouldFlushSettings();
+      Drivhus::getSettings()->setVoltMultiplier(value/Volt::MAX_VOLT);
+      Drivhus::getSettings()->setShouldFlushSettings();
     }
   }
 }
 
-void WebServer::notifyClients(const std::string& key, const std::string& data) {
-  ::getNetwork()->getWebServer()->textAll(key, data);
+void Drivhus::WebServer::notifyClients(const std::string& key, const std::string& data) {
+  Drivhus::getNetwork()->getWebServer()->textAll(key, data);
 }
 
-String WebServer::processor(const String& var){
+String Drivhus::WebServer::processor(const String& var){
   if (var == "SHOW_SETUP") {
-    return ::getSettings()->isInSetupMode() ? "" : "hidden";
+    return Drivhus::getSettings()->isInSetupMode() ? "" : "hidden";
   } else if (var == "SIX") {
-    return String(::getNetwork()->getWebServer()->getUnusedSensorIdsAsString().c_str());
+    return String(Drivhus::getNetwork()->getWebServer()->getUnusedSensorIdsAsString().c_str());
   } else if (var == "NIX") {
-    uint8_t sensor_id = ::getNetwork()->getWebServer()->getUnusedSensorId();
-    return String(::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
+    uint8_t sensor_id = Drivhus::getNetwork()->getWebServer()->getUnusedSensorId();
+    return String(Drivhus::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
   } else if (var.startsWith("SV")) {
     uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
-    return String(::getNetwork()->getWebServer()->getSensorValueAsString(sensor_id).c_str());
+    return String(Drivhus::getNetwork()->getWebServer()->getSensorValueAsString(sensor_id).c_str());
   } else if (var.startsWith("NS")) {
     uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
-    return String(::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
+    return String(Drivhus::getNetwork()->getWebServer()->generateSelectOptions(sensor_id).c_str());
   } else if (var == "ITEMP") {
-    return String(::getNetwork()->getWebServer()->getIndoorTemp(), 1);
+    return String(Drivhus::getNetwork()->getWebServer()->getIndoorTemp(), 1);
   } else if (var == "IHUMID") {
-    return String(::getNetwork()->getWebServer()->getIndoorHumid(), 1);
+    return String(Drivhus::getNetwork()->getWebServer()->getIndoorHumid(), 1);
   } else if (var == "ILIGHT") {
-    return String(::getNetwork()->getWebServer()->getLight(), 1);
+    return String(Drivhus::getNetwork()->getWebServer()->getLight(), 1);
   } else if (var == "OTEMP") {
-    return String(::getNetwork()->getWebServer()->getOutdoorTemp(), 1);
+    return String(Drivhus::getNetwork()->getWebServer()->getOutdoorTemp(), 1);
   } else if (var == "OHUMID") {
-    return String(::getNetwork()->getWebServer()->getOutdoorHumid(), 1);
+    return String(Drivhus::getNetwork()->getWebServer()->getOutdoorHumid(), 1);
   } else if (var == "VOLT") {
-    return String(::getNetwork()->getWebServer()->getVolt(), 2);
+    return String(Drivhus::getNetwork()->getWebServer()->getVolt(), 2);
   } else if (var == "VM") {
-    return String(::getNetwork()->getWebServer()->generateVoltMultiplierCalibration().c_str());
-  } else if (::getSettings()->isInSetupMode()) {
+    return String(Drivhus::getNetwork()->getWebServer()->generateVoltMultiplierCalibration().c_str());
+  } else if (Drivhus::getSettings()->isInSetupMode()) {
     if (var == "SSID") {
-      return String(::getSettings()->getSSID().c_str());
+      return String(Drivhus::getSettings()->getSSID().c_str());
     } else if (var == "SSID_PASSWORD") {
-      return String(::getSettings()->getSSIDPassword().c_str());
+      return String(Drivhus::getSettings()->getSSIDPassword().c_str());
     } else if (var == "MQTT_SERVER") {
-      return String(::getSettings()->getMQTTServername().c_str());
+      return String(Drivhus::getSettings()->getMQTTServername().c_str());
     } else if (var == "MQTT_PORT") {
-      return String(::getSettings()->getMQTTPort());
+      return String(Drivhus::getSettings()->getMQTTPort());
     } else if (var == "MQTT_ID") {
-      return String(::getSettings()->getMQTTServerId().c_str());
+      return String(Drivhus::getSettings()->getMQTTServerId().c_str());
     } else if (var == "MQTT_USERNAME") {
-      return String(::getSettings()->getMQTTUsername().c_str());
+      return String(Drivhus::getSettings()->getMQTTUsername().c_str());
     } else if (var == "MQTT_PASSWORD") {
-      return String(::getSettings()->getMQTTPassword().c_str());
+      return String(Drivhus::getSettings()->getMQTTPassword().c_str());
     }
   }
 #if 0
@@ -335,20 +348,20 @@ String WebServer::processor(const String& var){
   return String();
 }
 
-void WebServer::textAll(const std::string& key, const std::string& data) {
+void Drivhus::WebServer::textAll(const std::string& key, const std::string& data) {
   m_ws->textAll((key+data).c_str());
 }
 
-void WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
+void Drivhus::WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
   if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
-    if (!::getSettings()->isInSetupMode() || !::getRS485()->isSensorPresent(sensor_id)) {
-      notifyClients(std::string("NS")+::uint8ToHex(sensor_id), "");
+    if (!Drivhus::getSettings()->isInSetupMode() || !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
+      notifyClients(std::string("NS")+Drivhus::uint8ToHex(sensor_id), "");
     } else {
-      notifyClients(std::string("NS")+::uint8ToHex(sensor_id), generateSelectOptions(sensor_id));
+      notifyClients(std::string("NS")+Drivhus::uint8ToHex(sensor_id), generateSelectOptions(sensor_id));
     }
   } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID) {
     uint8_t sensor_id = getUnusedSensorId();
-    if (!::getSettings()->isInSetupMode() || sensor_id == RS485::UNDEFINED_ID) {
+    if (!Drivhus::getSettings()->isInSetupMode() || sensor_id == RS485::UNDEFINED_ID) {
       notifyClients("NIX", "");
     } else {
       notifyClients("NIX", generateSelectOptions(sensor_id));
@@ -356,11 +369,11 @@ void WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
   }
 }
 
-std::string WebServer::getSensorValueAsString(uint8_t sensor_id) const {
-  return ::getRS485()->isSensorPresent(sensor_id) ? ::floatToString(::getRS485()->getSensorHumidity(sensor_id), 2) : "Not available";
+std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const {
+  return Drivhus::getRS485()->isSensorPresent(sensor_id) ? Drivhus::floatToString(Drivhus::getRS485()->getSensorHumidity(sensor_id), 2) : "Not available";
 }
 
-std::string WebServer::getUnusedSensorIdsAsString() const {
+std::string Drivhus::WebServer::getUnusedSensorIdsAsString() const {
   std::stringstream ss;
   for (uint8_t item: m_present_sensors) {
     if (item>=RS485::MIN_ID && item<=RS485::MAX_ID &&
@@ -374,7 +387,7 @@ std::string WebServer::getUnusedSensorIdsAsString() const {
   return ss.str();
 }
 
-uint8_t WebServer::getUnusedSensorId() const {
+uint8_t Drivhus::WebServer::getUnusedSensorId() const {
   uint8_t sensor_id = RS485::UNDEFINED_ID;
   for (uint8_t item: m_present_sensors) {
     if (item>=RS485::MIN_ID && item<=RS485::MAX_ID &&
@@ -389,33 +402,33 @@ uint8_t WebServer::getUnusedSensorId() const {
   return sensor_id;
 }
 
-std::string WebServer::generateSelectOptions(uint8_t sensor_id) const {
-  if (!::getSettings()->isInSetupMode() ||
+std::string Drivhus::WebServer::generateSelectOptions(uint8_t sensor_id) const {
+  if (!Drivhus::getSettings()->isInSetupMode() ||
       sensor_id<RS485::MIN_ID || sensor_id>RS485::MAX_ID ||
-      !::getRS485()->isSensorPresent(sensor_id)) {
+      !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
     return "";
   }
 
  std::stringstream ss;
-  ss << "&nbsp;<select id=\"SO" << ::uint8ToHex(sensor_id) << "\">"; //Sensor ID Option
+  ss << "&nbsp;<select id=\"SO" << Drivhus::uint8ToHex(sensor_id) << "\">"; //Sensor ID Option
   for (uint8_t i=RS485::DRIVHUS_MIN_ID; i<=RS485::DRIVHUS_MAX_ID; i++) {
     if (m_present_sensors.find(i) == m_present_sensors.end()) {
-      ss << "<option value=\"" << ::uint8ToHex(i) << "\">" << std::to_string(i) << "</option>";
+      ss << "<option value=\"" << Drivhus::uint8ToHex(i) << "\">" << std::to_string(i) << "</option>";
     }
   }
-  ss << "</select><button onCLick=\"updateSensorId('" << ::uint8ToHex(sensor_id) << "')\">Set new sensor ID</button>";
+  ss << "</select><button onCLick=\"updateSensorId('" << Drivhus::uint8ToHex(sensor_id) << "')\">Set new sensor ID</button>";
   return ss.str();
 }
 
-std::string WebServer::generateVoltMultiplierCalibration() const {
-  if (!::getSettings()->isInSetupMode()) {
+std::string Drivhus::WebServer::generateVoltMultiplierCalibration() const {
+  if (!Drivhus::getSettings()->isInSetupMode()) {
     return "";
   }
 
   return "&nbsp;<input type=\"number\" id=\"VOLT_MULTIPLIER\" min=\"0.0\" max=\"14.5\" step=\"0.1\" value=\"%VOLT_MULTIPLIER%\">V <button onCLick=\"updateVoltMultiplier()\">Calibrate</button>";
 }
 
-void WebServer::checkIfWarningMessageShouldBeShown() {
+void Drivhus::WebServer::checkIfWarningMessageShouldBeShown() {
   const std::lock_guard<std::recursive_mutex> lock(m_warning_messages_mutex);
   if (!m_warning_messages.empty()) {
     std::string msg = m_warning_messages.front();
@@ -424,7 +437,56 @@ void WebServer::checkIfWarningMessageShouldBeShown() {
   }
 }
 
-void WebServer::showWarningMessage(const std::string& msg) {
+void Drivhus::WebServer::showWarningMessage(const std::string& msg) {
   notifyClients("MSG", msg);
   m_warning_message_time = msg.empty() ? 0L : millis();
+}
+
+void Drivhus::WebServer::activateRelayTests() {
+  if (!m_is_testing_relays) {
+    m_is_testing_relays = true;
+    m_relay_test_event_time = millis();
+    m_relay_test_index = 0;
+    m_relay_test_on = false;
+  }  
+}
+
+void Drivhus::WebServer::updateRelayTest() {
+  const unsigned long current_time = millis();
+  if (current_time < m_relay_test_event_time) { //Time will wrap around every ~50 days. Don't consider this an error
+    m_relay_test_event_time = current_time;
+  }
+
+  if (!m_relay_test_on && (m_relay_test_event_time+RELAY_TEST_DELAY_MS)<current_time) {
+    activateTestRelay(true);
+    m_relay_test_event_time = current_time;
+    m_relay_test_on = true;
+  } else if (m_relay_test_on && (m_relay_test_event_time+RELAY_TEST_ON_MS)<current_time) {
+    activateTestRelay(false);
+    m_relay_test_event_time = current_time;
+    m_relay_test_on = false;
+    if (++m_relay_test_index >= (15+1+1+1)) {
+      m_is_testing_relays = false;
+    }
+  }
+}
+
+void Drivhus::WebServer::activateTestRelay(bool turn_on) {
+  if (m_relay_test_index < 15) {
+    if (turn_on) addWarningMessage(std::string("Testing WaterPump ")+std::to_string(m_relay_test_index+1));
+    if (turn_on) {
+      Drivhus::getCD74HC4067()->setActiveAddress(m_relay_test_index+1);
+    } else {
+      Drivhus::getCD74HC4067()->deactivate();
+    }
+  } else if (m_relay_test_index == 15) {
+    if (turn_on) addWarningMessage("Testing Fan");
+    digitalWrite(O_FAN_PIN, turn_on ? HIGH : LOW);
+  } else if (m_relay_test_index == 16) {
+    if (turn_on) addWarningMessage("Testing GrowLight");
+    digitalWrite(O_GROWLIGHT_PIN, turn_on ? HIGH : LOW);
+  } else if (m_relay_test_index == 17) {
+    if (turn_on) addWarningMessage("Testing Water Valve");
+    digitalWrite(O_WATER_VALVE_PIN, turn_on ? HIGH : LOW);
+  }
 }

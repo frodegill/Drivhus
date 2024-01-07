@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+namespace Drivhus {
 
 class Volt
 {
@@ -22,5 +23,7 @@ private:
   unsigned long m_previous_sampling_time;
   float m_volt;
 };
+
+} //namespace
 
 #endif // _VOLT_H_

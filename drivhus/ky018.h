@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+namespace Drivhus {
 
 class KY018
 {
@@ -21,5 +22,7 @@ private:
   unsigned long m_previous_sampling_time;
   float m_light_percentage;
 };
+
+} //namespace
 
 #endif // _KY018_H_

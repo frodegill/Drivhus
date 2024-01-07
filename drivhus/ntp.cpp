@@ -12,19 +12,19 @@
 
 /* This class is based on NTP example code, but made non-blocking */
 
-NTP::NTP(Timezone&& timezone)
+Drivhus::NTP::NTP(Timezone&& timezone)
 : m_timezone(timezone),
   m_previous_ntp_request_time(0L) {
 }
 
-bool NTP::init() {
+bool Drivhus::NTP::init() {
   m_udp.begin(NTP::LOCAL_PORT);
   setSyncProvider(NTP::requestNTPUTCTime);
   setSyncInterval(NTP::NTP_SYNC_INTERVAL_SEC);
   return true;
 }
 
-void NTP::loop() {
+void Drivhus::NTP::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_ntp_request_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_ntp_request_time = current_time;
@@ -41,7 +41,7 @@ void NTP::loop() {
   }
 }
 
-bool NTP::getLocalTime(time_t& local_time) {
+bool Drivhus::NTP::getLocalTime(time_t& local_time) {
   if (timeStatus() == timeNotSet)
     return false;
 
@@ -49,12 +49,12 @@ bool NTP::getLocalTime(time_t& local_time) {
   return true;
 }
 
-time_t NTP::requestNTPUTCTime() {
-  ::getNTP()->sendNTPpacket();
+time_t Drivhus::NTP::requestNTPUTCTime() {
+  Drivhus::getNTP()->sendNTPpacket();
   return 0; // Handle response in loop() to avoid blocking
 }
 
-void NTP::sendNTPpacket() {
+void Drivhus::NTP::sendNTPpacket() {
   while (m_udp.parsePacket() > 0) ; // discard any previously received packets
 
   std::memset(m_packet_buffer, 0, NTP_PACKET_SIZE);
@@ -78,7 +78,7 @@ void NTP::sendNTPpacket() {
   }
 }
 
-void NTP::handleNTPResponse() {
+void Drivhus::NTP::handleNTPResponse() {
   if (m_udp.parsePacket() >= NTP_PACKET_SIZE) {
     m_udp.read(m_packet_buffer, NTP_PACKET_SIZE);
 

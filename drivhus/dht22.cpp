@@ -5,7 +5,7 @@
 #include "webserver.h"
 
 
-DHT22::DHT22(uint8_t id, uint8_t pin)
+Drivhus::DHT22::DHT22(uint8_t id, uint8_t pin)
 : m_id(id),
   m_pin(pin),
   m_previous_sampling_time(0L),
@@ -14,13 +14,13 @@ DHT22::DHT22(uint8_t id, uint8_t pin)
   m_humidity(0.0f) {
 }
 
-bool DHT22::init() {
+bool Drivhus::DHT22::init() {
   pinMode(m_pin, OUTPUT); //DHT handles this pin itself, but it should be OUTPUT before setup
   m_dht.setup(m_pin, DHTesp::AM2302);
   return true;
 }
 
-void DHT22::loop() {
+void Drivhus::DHT22::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_sampling_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_sampling_time = current_time;
@@ -33,7 +33,7 @@ void DHT22::loop() {
       m_is_present = true;
       m_temperature = temp_and_humidity.temperature;
       m_humidity = temp_and_humidity.humidity;
-      ::getNetwork()->getWebServer()->updateTempHumid(m_id, m_temperature, m_humidity);
+      Drivhus::getNetwork()->getWebServer()->updateTempHumid(m_id, m_temperature, m_humidity);
     } else {
       m_is_present = false;
     }

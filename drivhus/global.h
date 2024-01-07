@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string>
 
+namespace Drivhus {
 
 static constexpr uint8_t O_CD74HC4067_COMMON_PIN = 32;
 static constexpr uint8_t O_CD74HC4067_S0_PIN   = 26;
@@ -58,5 +59,7 @@ class Waterlevel; //Waterlevel sensors
 std::string floatToString(const float& value, uint8_t precision);
 std::string uint8ToHex(uint8_t value);
 std::string uint16ToHex(uint16_t value);
+
+} //namespace
 
 #endif // _GLOBAL_H_

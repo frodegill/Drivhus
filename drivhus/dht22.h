@@ -7,6 +7,8 @@
 # include <DHTesp.h>           // Library: DHT_sensor_library_for_ESPx
 #endif
 
+namespace Drivhus {
+
 class DHT22
 {
 public:
@@ -27,5 +29,7 @@ private:
   float m_temperature;
   float m_humidity;
 };
+
+} //namespace
 
 #endif // _DHT22_H_

@@ -12,11 +12,14 @@
 #include <mutex>
 #include <set>
 
+namespace Drivhus {
 
 class WebServer
 {
 public:
   static constexpr unsigned long WARNING_MESSAG_DELAY_MS = 5000L;
+  static constexpr unsigned long RELAY_TEST_DELAY_MS = 200L;
+  static constexpr unsigned long RELAY_TEST_ON_MS = WebServer::WARNING_MESSAG_DELAY_MS;
 
 public:
   WebServer();
@@ -61,6 +64,10 @@ private:
   void checkIfWarningMessageShouldBeShown();
   void showWarningMessage(const std::string& msg);
 
+  void activateRelayTests();
+  void updateRelayTest();
+  void activateTestRelay(bool turn_on);
+
 private:
   std::unique_ptr<AsyncWebServer> m_server;
   std::unique_ptr<AsyncWebSocket> m_ws;
@@ -76,6 +83,13 @@ private:
   std::list<std::string> m_warning_messages;
   std::recursive_mutex m_warning_messages_mutex;
   unsigned long m_warning_message_time;
+
+  bool m_is_testing_relays;
+  unsigned long m_relay_test_event_time;
+  uint8_t m_relay_test_index;
+  bool m_relay_test_on;
 };
+
+} //namespace
 
 #endif // _WEBSERVER_H_

@@ -7,6 +7,7 @@
 # include <Arduino.h>
 #endif
 
+namespace Drivhus {
 
 class Waterlevel
 {
@@ -22,5 +23,7 @@ private:
 
   bool m_water_valve_is_open;
 };
+
+} //namespace
 
 #endif // _WATERLEVEL_H_

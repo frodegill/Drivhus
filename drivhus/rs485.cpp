@@ -7,7 +7,7 @@
 #include "network.h"
 
 
-RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
+Drivhus::RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
 : m_rx_pin(rx_pin),
   m_tx_pin(tx_pin),
   m_enable_pin(enable_pin),
@@ -23,7 +23,7 @@ RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
   }
 }
 
-bool RS485::init() {
+bool Drivhus::RS485::init() {
   Serial2.begin(SERIAL_BAUD, SERIAL_8E1, m_rx_pin, m_tx_pin);
   m_modbus = std::unique_ptr<ModbusRTUMaster>(new ModbusRTUMaster(Serial2, m_enable_pin)); // serial port, driver enable pin for rs-485 (optional)
   m_modbus->begin(Serial2.baudRate());
@@ -31,7 +31,7 @@ bool RS485::init() {
   return true;
 }
 
-void RS485::loop() {
+void Drivhus::RS485::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_complete_scan_time) { //Time will wrap around every ~50 days. Don't consider this an error
     m_previous_complete_scan_time = current_time;
@@ -50,7 +50,7 @@ void RS485::loop() {
         if (!m_performed_full_scan) {
           m_performed_full_scan = true;
         }
-        ::getNetwork()->getWebServer()->setSensorScanCompleted();
+        Drivhus::getNetwork()->getWebServer()->setSensorScanCompleted();
         return;
       } else {
         m_previous_scanned_sensor_id = (m_previous_scanned_sensor_id==UNDEFINED_ID) ? (m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID) : m_previous_scanned_sensor_id+1;
@@ -60,17 +60,17 @@ void RS485::loop() {
       if (is_present) {
         setSensorValues(m_previous_scanned_sensor_id, tmp_holding_registers[0], tmp_holding_registers[1]);
       }
-      ::getNetwork()->getWebServer()->updateSensor(m_previous_scanned_sensor_id);
+      Drivhus::getNetwork()->getWebServer()->updateSensor(m_previous_scanned_sensor_id);
   }
 }
 
-bool RS485::isSensorPresent(uint8_t id) const {
+bool Drivhus::RS485::isSensorPresent(uint8_t id) const {
   uint8_t index = id>>5;
   uint8_t bit = id&0x1F;
   return (m_sensor_present[index]&(1<<bit)) != 0;
 }
 
-std::set<uint8_t> RS485::getPresentSensors() const {
+std::set<uint8_t> Drivhus::RS485::getPresentSensors() const {
   std::set<uint8_t> present_sensors;
   for (uint8_t i=MIN_ID; i<=MAX_ID; i++) {
     if (isSensorPresent(i)) {
@@ -80,26 +80,26 @@ std::set<uint8_t> RS485::getPresentSensors() const {
   return present_sensors;
 }
 
-float RS485::getSensorTemp(uint8_t id) {
+float Drivhus::RS485::getSensorTemp(uint8_t id) {
   if (id<DRIVHUS_MIN_ID || id>DRIVHUS_MAX_ID || !isSensorPresent(id))
     return 0.0f;
 
   return m_sensor_temp[id-1]/10.0f;
 }
 
-float RS485::getSensorHumidity(uint8_t id) {
+float Drivhus::RS485::getSensorHumidity(uint8_t id) {
   if (id<DRIVHUS_MIN_ID || id>DRIVHUS_MAX_ID || !isSensorPresent(id))
     return 0.0f;
 
   return m_sensor_humidity[id-1]/100.0f;
 }
 
-void RS485::setSensorShouldBeReassigned(uint8_t old_id, uint8_t new_id) {
+void Drivhus::RS485::setSensorShouldBeReassigned(uint8_t old_id, uint8_t new_id) {
   const std::lock_guard<std::recursive_mutex> lock(m_reassign_sensor_ids_mutex);
   m_reassign_sensor_ids.emplace_back(old_id, new_id);
 }
 
-bool RS485::checkIfSensorIsPresent(uint8_t id) {
+bool Drivhus::RS485::checkIfSensorIsPresent(uint8_t id) {
   bool is_present = false;
   if (id>=MIN_ID && id<=MAX_ID) {
     m_modbus->clearTimeoutFlag();
@@ -120,7 +120,7 @@ bool RS485::checkIfSensorIsPresent(uint8_t id) {
   return is_present;
 }
 
-void RS485::setSensorPresent(uint8_t id, bool is_present) {
+void Drivhus::RS485::setSensorPresent(uint8_t id, bool is_present) {
   uint8_t index = id>>5;
   uint8_t bit = id&0x1F;
   if (is_present) {
@@ -130,14 +130,14 @@ void RS485::setSensorPresent(uint8_t id, bool is_present) {
   }
 }
 
-void RS485::setSensorValues(uint8_t id, uint16_t temp, uint16_t humidity) {
+void Drivhus::RS485::setSensorValues(uint8_t id, uint16_t temp, uint16_t humidity) {
   if (id>=DRIVHUS_MIN_ID && id<=DRIVHUS_MAX_ID && isSensorPresent(id)) {
     m_sensor_temp[id-1] = temp;
     m_sensor_humidity[id-1] = humidity;
   }
 }
 
-void RS485::checkIfSensorsShouldBeReassigned() {
+void Drivhus::RS485::checkIfSensorsShouldBeReassigned() {
   const std::lock_guard<std::recursive_mutex> lock(m_reassign_sensor_ids_mutex);
   if (!m_reassign_sensor_ids.empty()) {
     std::pair<uint8_t, uint8_t> work = m_reassign_sensor_ids.front();
@@ -146,11 +146,11 @@ void RS485::checkIfSensorsShouldBeReassigned() {
 
     std::stringstream ss;
     ss << "Reassigning sensor " << work.first << " to " << work.second << (result ? "SUCCEEDED" : "FAILED");
-    ::getNetwork()->getWebServer()->addWarningMessage(ss.str());
+    Drivhus::getNetwork()->getWebServer()->addWarningMessage(ss.str());
   }
 }
 
-bool RS485::setNewSensorId(uint8_t old_id, uint8_t new_id, bool force) {
+bool Drivhus::RS485::setNewSensorId(uint8_t old_id, uint8_t new_id, bool force) {
   if (!force &&
       (checkIfSensorIsPresent(new_id) ||
        !checkIfSensorIsPresent(old_id) ||
@@ -163,8 +163,8 @@ bool RS485::setNewSensorId(uint8_t old_id, uint8_t new_id, bool force) {
   if (ret) {
     setSensorPresent(old_id, false);
     setSensorPresent(new_id, true);
-    ::getNetwork()->getWebServer()->updateSensor(old_id);
-    ::getNetwork()->getWebServer()->updateSensor(new_id);
+    Drivhus::getNetwork()->getWebServer()->updateSensor(old_id);
+    Drivhus::getNetwork()->getWebServer()->updateSensor(new_id);
   }
   return ret;
 }

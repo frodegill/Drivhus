@@ -12,6 +12,7 @@
 
 #include "volt.h"
 
+namespace Drivhus {
 
 class Settings
 {
@@ -89,5 +90,7 @@ public:
   bool m_should_flush_settings;
   std::recursive_mutex m_should_flush_settings_mutex;
 };
+
+} //namespace
 
 #endif // _SETTINGS_H_
