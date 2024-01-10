@@ -6,7 +6,10 @@
 
 #include "global.h"
 
+#include "cd74hc4067.h"
 #include "dht22.h"
+#include "fan.h"
+#include "growlight.h"
 #include "ky018.h"
 #include "network.h"
 #include "ntp.h"
@@ -24,8 +27,11 @@ void setup() {
   Serial.println("Starting Drivhus");
 
   if (!Drivhus::getSettings()->init() ||
+      !Drivhus::getCD74HC4067()->init() ||
       !Drivhus::getIndoorDHT22()->init() ||
       !Drivhus::getOutdoorDHT22()->init() ||
+      !Drivhus::getFan()->init() ||
+      !Drivhus::getGrowlight()->init() ||
       !Drivhus::getKY018()->init() ||
       !Drivhus::getVolt()->init() ||
       !Drivhus::getNetwork()->init() ||
@@ -43,8 +49,11 @@ void setup() {
 
 void loop() {
   Drivhus::getSettings()->loop();
+  Drivhus::getCD74HC4067()->loop();
   Drivhus::getIndoorDHT22()->loop();
   Drivhus::getOutdoorDHT22()->loop();
+  Drivhus::getFan()->loop();
+  Drivhus::getGrowlight()->loop();
   Drivhus::getKY018()->loop();
   Drivhus::getVolt()->loop();
   Drivhus::getNetwork()->loop();

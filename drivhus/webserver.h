@@ -66,7 +66,7 @@ private:
 
   void activateRelayTests();
   void updateRelayTest();
-  void activateTestRelay(bool turn_on);
+  bool activateTestRelay(bool turn_on);
 
 private:
   std::unique_ptr<AsyncWebServer> m_server;

@@ -37,6 +37,12 @@ class DHT22; //Temperature/Humidity sensor
 [[nodiscard]] std::shared_ptr<DHT22> getIndoorDHT22();
 [[nodiscard]] std::shared_ptr<DHT22> getOutdoorDHT22();
 
+class Fan;
+[[nodiscard]] std::shared_ptr<Fan> getFan();
+
+class Growlight;
+[[nodiscard]] std::shared_ptr<Growlight> getGrowlight();
+
 class KY018; //Light sensor
 [[nodiscard]] std::shared_ptr<KY018> getKY018();
 

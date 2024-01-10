@@ -10,6 +10,8 @@
 
 #include "cd74hc4067.h"
 #include "dht22.h"
+#include "fan.h"
+#include "growlight.h"
 #include "ky018.h"
 #include "network.h"
 #include "ntp.h"
@@ -41,6 +43,22 @@ std::shared_ptr<Drivhus::DHT22> g_outdoor_dht22;
     g_outdoor_dht22 = std::make_shared<Drivhus::DHT22>(1, I_DHT22_OUTDOOR_PIN);
   }
   return g_outdoor_dht22;
+}
+
+std::shared_ptr<Drivhus::Fan> g_fan;
+[[nodiscard]] std::shared_ptr<Drivhus::Fan> Drivhus::getFan() {
+  if (!g_fan) {
+    g_fan = std::make_shared<Drivhus::Fan>(O_FAN_PIN);
+  }
+  return g_fan;
+}
+
+std::shared_ptr<Drivhus::Growlight> g_growlight;
+[[nodiscard]] std::shared_ptr<Drivhus::Growlight> Drivhus::getGrowlight() {
+  if (!g_growlight) {
+    g_growlight = std::make_shared<Drivhus::Growlight>(O_GROWLIGHT_PIN);
+  }
+  return g_growlight;
 }
 
 std::shared_ptr<Drivhus::KY018> g_ky018;

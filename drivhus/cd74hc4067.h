@@ -15,8 +15,11 @@ public:
   [[nodiscard]] bool init();
   void loop();
 
-  void setActiveAddress(uint8_t address);
-  void deactivate();
+  void activate(uint8_t address, unsigned long duration);
+  [[nodiscard]] bool isActive() const {return m_activate_time!=0L;}
+
+private:
+  void reset();
   
 private:
   uint8_t m_s0_pin;
@@ -24,6 +27,8 @@ private:
   uint8_t m_s2_pin;
   uint8_t m_s3_pin;
   uint8_t m_common_pin;
+  unsigned long m_activate_time;
+  unsigned long m_activate_duration;
 };
 
 } //namespace

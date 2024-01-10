@@ -458,35 +458,44 @@ void Drivhus::WebServer::updateRelayTest() {
   }
 
   if (!m_relay_test_on && (m_relay_test_event_time+RELAY_TEST_DELAY_MS)<current_time) {
-    activateTestRelay(true);
-    m_relay_test_event_time = current_time;
-    m_relay_test_on = true;
+    if (activateTestRelay(true)) {
+      m_relay_test_event_time = current_time;
+      m_relay_test_on = true;
+    }
   } else if (m_relay_test_on && (m_relay_test_event_time+RELAY_TEST_ON_MS)<current_time) {
-    activateTestRelay(false);
-    m_relay_test_event_time = current_time;
-    m_relay_test_on = false;
-    if (++m_relay_test_index >= (15+1+1+1)) {
-      m_is_testing_relays = false;
+    if (activateTestRelay(false)) {
+      m_relay_test_event_time = current_time;
+      m_relay_test_on = false;
+      if (++m_relay_test_index >= (15+1+1+1)) {
+        m_is_testing_relays = false;
+      }
     }
   }
 }
 
-void Drivhus::WebServer::activateTestRelay(bool turn_on) {
+bool Drivhus::WebServer::activateTestRelay(bool turn_on) {
   if (m_relay_test_index < 15) {
-    if (turn_on) addWarningMessage(std::string("Testing WaterPump ")+std::to_string(m_relay_test_index+1));
-    if (turn_on) {
-      Drivhus::getCD74HC4067()->setActiveAddress(m_relay_test_index+1);
-    } else {
-      Drivhus::getCD74HC4067()->deactivate();
+    if (!Drivhus::getCD74HC4067()->isActive()) {
+      if (turn_on) {
+        addWarningMessage(std::string("Testing WaterPump ")+std::to_string(m_relay_test_index+1));
+        Drivhus::getCD74HC4067()->activate(m_relay_test_index+1, RELAY_TEST_ON_MS);
+        return true;
+      } else {
+        return true; //Relay turns itself off.
+      }
     }
   } else if (m_relay_test_index == 15) {
     if (turn_on) addWarningMessage("Testing Fan");
     digitalWrite(O_FAN_PIN, turn_on ? HIGH : LOW);
+    return true;
   } else if (m_relay_test_index == 16) {
     if (turn_on) addWarningMessage("Testing GrowLight");
     digitalWrite(O_GROWLIGHT_PIN, turn_on ? HIGH : LOW);
+    return true;
   } else if (m_relay_test_index == 17) {
     if (turn_on) addWarningMessage("Testing Water Valve");
     digitalWrite(O_WATER_VALVE_PIN, turn_on ? HIGH : LOW);
+    return true;
   }
+  return false;
 }
