@@ -8,13 +8,17 @@
 #include <cstring>
 
 #include "global.h"
+#include "settings.h"
 
 
 /* This class is based on NTP example code, but made non-blocking */
 
 Drivhus::NTP::NTP(Timezone&& timezone)
 : m_timezone(timezone),
-  m_previous_ntp_request_time(0L) {
+  m_previous_ntp_request_time(0L),
+  m_previous_calculated_date(0),
+  m_sunrise(12*60.0f),
+  m_sunset(12*60.0f) {
 }
 
 bool Drivhus::NTP::init() {
@@ -39,6 +43,20 @@ void Drivhus::NTP::loop() {
       handleNTPResponse();
     }
   }
+
+  struct tm* local_tm = getLocalTm();
+  if (local_tm != nullptr) {
+    uint32_t local_date=(1900+local_tm->tm_year)*10000 + (1+local_tm->tm_mon)*100 + local_tm->tm_mday;
+    if (local_date != m_previous_calculated_date) {
+      float latitude = Drivhus::getSettings()->getEmulateLatitude();
+      float longitude = Drivhus::getSettings()->getEmulateLongitude();
+      float eqtime, ha;
+      calculateEqtimeMinutesAndHourAngleDegrees(latitude, longitude, eqtime, ha);
+      m_sunrise = 720 - 4*(longitude + ha) - eqtime;
+      m_sunset = 720 - 4*(longitude - ha) - eqtime;
+      m_previous_calculated_date = local_date;
+    }
+  }
 }
 
 bool Drivhus::NTP::getLocalTime(time_t& local_time) {
@@ -47,6 +65,61 @@ bool Drivhus::NTP::getLocalTime(time_t& local_time) {
 
   local_time = m_timezone.toLocal(now());
   return true;
+}
+
+struct tm* Drivhus::NTP::getLocalTm() {
+  time_t local_time;
+  if (!getLocalTime(local_time)) {
+    return nullptr;
+  }
+  return ::localtime(&local_time);
+}
+
+bool Drivhus::NTP::isLeapYear() {
+  struct tm* local_tm = getLocalTm();
+  return (local_tm == nullptr) ? false : isLeapYear(1900+local_tm->tm_year);
+}
+
+const Drivhus::TimezoneInfo* Drivhus::NTP::getTimezoneInfo(const std::string& timezone) {
+  for (auto tz : g_timezones) {
+    if (timezone.compare(tz.code)==0) {
+      return &tz;
+    }
+  }
+  return &g_timezones[0];
+}
+
+void Drivhus::NTP::calculateEqtimeMinutesAndHourAngleDegrees(float latitude, float longitude, float& eqtime, float& ha) {
+  // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
+
+  struct tm* local_tm = getLocalTm();
+  if (local_tm == nullptr) {
+    eqtime = 0.0f;
+    ha = -longitude;
+    return;
+  }
+
+  int days_in_year = isLeapYear(1900+local_tm->tm_year) ? 366 : 365;
+  float fractional_year_rad = (2*PI/days_in_year) * (local_tm->tm_yday - 1 + (local_tm->tm_hour-12.0f)/24.0f);
+  
+  float solar_declination_rad = 0.006918f -
+                                0.399912f * ::cos(fractional_year_rad) +
+                                0.070257f * ::sin(fractional_year_rad) -
+                                0.006758f * ::cos(2*fractional_year_rad) +
+                                0.000907f * ::sin(2*fractional_year_rad) -
+                                0.002697f * ::cos(3*fractional_year_rad) +
+                                0.001480f * ::sin (3*fractional_year_rad);
+
+  eqtime = 229.18f * (0.000075f +
+                      0.001868f * ::cos(fractional_year_rad) -
+                      0.032077f * ::sin(fractional_year_rad) -
+                      0.014615f * ::cos(2*fractional_year_rad) -
+                      0.040849f * ::sin(2*fractional_year_rad) );
+
+  ha = radToDeg(::acos(
+                       (::cos(degToRad(90.833f)) / (::cos(degToRad(latitude))*::cos(solar_declination_rad)))
+                       - ::tan(degToRad(latitude))*::tan(solar_declination_rad)
+                      ));
 }
 
 time_t Drivhus::NTP::requestNTPUTCTime() {

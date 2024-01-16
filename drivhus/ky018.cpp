@@ -30,6 +30,6 @@ void Drivhus::KY018::loop() {
   if ((m_previous_sampling_time+POLL_INTERVAL_MS)<current_time) {
     m_previous_sampling_time = current_time;
     m_light_percentage = 100.0f - analogRead(m_pin)/40.95f;
-    Drivhus::getNetwork()->getWebServer()->updateLight(m_light_percentage);
+    Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::LIGHT, m_light_percentage);
   }
 }

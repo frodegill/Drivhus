@@ -80,10 +80,8 @@ std::shared_ptr<Drivhus::Network> g_network;
 std::shared_ptr<Drivhus::NTP> g_ntp;
 [[nodiscard]] std::shared_ptr<Drivhus::NTP> Drivhus::getNTP() {
   if (!g_ntp) {
-    //Central European Time (Frankfurt, Paris)
-    TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120};     //Central European Summer Time
-    TimeChangeRule CET = {"CET ", Last, Sun, Oct, 3, 60};       //Central European Standard Time
-    g_ntp = std::make_shared<Drivhus::NTP>(Timezone(CEST, CET));
+    const Drivhus::TimezoneInfo* tz = Drivhus::NTP::getTimezoneInfo(Drivhus::getSettings()->getTimezone());
+    g_ntp = std::make_shared<Drivhus::NTP>(Timezone(tz->dst, tz->regular));
   }
   return g_ntp;
 }

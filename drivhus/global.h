@@ -5,7 +5,21 @@
 #include <stdint.h>
 #include <string>
 
+#include "ntp.h"
+
+
 namespace Drivhus {
+
+#ifndef PI
+# define PI (3.1415926535897932384626433832795)
+#endif
+
+#define degToRad(angleInDegrees) ((angleInDegrees) * PI / 180.0f)
+#define radToDeg(angleInRadians) ((angleInRadians) * 180.0f / PI)
+
+#define ON (true)
+#define OFF (false)
+
 
 static constexpr uint8_t O_CD74HC4067_COMMON_PIN = 32;
 static constexpr uint8_t O_CD74HC4067_S0_PIN   = 26;
@@ -26,6 +40,11 @@ static constexpr uint8_t O_WATER_VALVE_PIN     = 22;
 static constexpr uint8_t I_WATERLEVEL_LOW_PIN  = 36;
 static constexpr uint8_t I_WATERLEVEL_HIGH_PIN = 39;
 
+//A small selection of time zones
+constexpr TimezoneInfo g_timezones[] = {{"CET", "Central European Time", {"", Last, Sun, Oct, 3, 1*60}, {"", Last, Sun, Mar, 2, 2*60}},
+                                        {"BST", "United Kingdom", {"", Last, Sun, Oct, 2, 0*60}, {"", Last, Sun, Mar, 1, 1*60}},
+                                        {"EST", "US Eastern Time", {"", First, Sun, Nov, 2, -5*60}, {"", Second, Sun, Mar, 2, -4*60}},
+                                        {"PST", "US Pacific Time", {"", First, Sun, Nov, 2, -8*60}, {"", Second, Sun, Mar, 2, -7*60}}};
 
 class Settings;
 [[nodiscard]] std::shared_ptr<Settings> getSettings();

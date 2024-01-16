@@ -25,7 +25,7 @@ bool Drivhus::Settings::init() {
   EEPROM.begin(1 + 
                MAX_SSID_LENGTH+1 + MAX_SSID_PASSWORD_LENGTH+1 +
                MAX_MQTT_SERVERNAME_LENGTH+1 + MAX_MQTT_SERVERPORT_LENGTH+1 + MAX_MQTT_SERVERID_LENGTH+1 + MAX_MQTT_USERNAME_LENGTH+1 + MAX_MQTT_PASSWORD_LENGTH+1 +
-               VOLT_MULTIPLIER_LENGTH+1);
+               VOLT_MULTIPLIER_LENGTH+1 + MAX_TIMEZONE_LENGTH+1 + MAX_EMULATE_LATITUDE_LENGTH+1 + MAX_EMULATE_LONGITUDE_LENGTH+1);
 
   readPersistentParams();
   m_in_setup_mode = isInSetupMode();
@@ -53,6 +53,22 @@ bool Drivhus::Settings::isInSetupMode() {
     m_in_setup_mode = digitalRead(m_pin)==LOW;
   }
   return m_in_setup_mode;
+}
+
+void Drivhus::Settings::addChangeListener(Drivhus::OnChangeListener* listener) {
+  m_change_listeners.push_back(listener);
+}
+
+void Drivhus::Settings::notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType type, float value) {
+  for (auto listener : m_change_listeners) {
+    listener->onChangedFloat(type, value);
+  }
+}
+
+void Drivhus::Settings::notifyStringChangeListeners(Drivhus::OnChangeListener::StringType type, const std::string& value) {
+  for (auto listener : m_change_listeners) {
+    listener->onChangedString(type, value);
+  }
 }
 
 void Drivhus::Settings::setShouldFlushSettings() {
@@ -91,25 +107,35 @@ void Drivhus::Settings::readPersistentParams() {
     m_mqtt_username_param[0] = 0;
     m_mqtt_password_param[0] = 0;
     m_volt_multiplier_param = 1.0f;
+    m_timezone_param[0] = 0;
+    m_emulate_latitude_param = 0;
+    m_emulate_longitude_param = 0;
   }
   else
   {
+    std::string temp;
+
     readPersistentString(m_ssid_param, MAX_SSID_LENGTH, adr);
     readPersistentString(m_ssid_password_param, MAX_SSID_PASSWORD_LENGTH, adr);
     readPersistentString(m_mqtt_servername_param, MAX_MQTT_SERVERNAME_LENGTH, adr);
 
-    std::string port;
-    readPersistentString(port, MAX_MQTT_SERVERPORT_LENGTH, adr);
-    m_mqtt_serverport_param = static_cast<uint16_t>(std::stoi(port)&0xFFFF);
+    readPersistentString(temp, MAX_MQTT_SERVERPORT_LENGTH, adr);
+    m_mqtt_serverport_param = static_cast<uint16_t>(std::stoi(temp)&0xFFFF);
 
     readPersistentString(m_mqtt_serverid_param, MAX_MQTT_SERVERID_LENGTH, adr);
     readPersistentString(m_mqtt_username_param, MAX_MQTT_USERNAME_LENGTH, adr);
     readPersistentString(m_mqtt_password_param, MAX_MQTT_PASSWORD_LENGTH, adr);
 
-    std::string volt_multiplier;
-    readPersistentString(volt_multiplier, VOLT_MULTIPLIER_LENGTH, adr);
-    uint16_t tmp_volt_multiplier = static_cast<uint16_t>(std::stoi(volt_multiplier)&0xFFFF);
-    m_volt_multiplier_param = tmp_volt_multiplier/256.0f;
+    readPersistentString(temp, VOLT_MULTIPLIER_LENGTH, adr);
+    m_volt_multiplier_param = static_cast<uint16_t>(std::stoi(temp)&0xFFFF) / 256.0f;
+
+    readPersistentString(m_timezone_param, MAX_TIMEZONE_LENGTH, adr);
+
+    readPersistentString(temp, MAX_EMULATE_LATITUDE_LENGTH, adr);
+    m_emulate_latitude_param = static_cast<int8_t>(std::stoi(temp) - 90);
+
+    readPersistentString(temp, MAX_EMULATE_LONGITUDE_LENGTH, adr);
+    m_emulate_longitude_param = static_cast<int16_t>(std::stoi(temp) - 180);
   }
 }
 
@@ -146,6 +172,14 @@ bool Drivhus::Settings::writePersistentParams() {
   sprintf(volt_multiplier, "%hu", tmp_volt_multiplier);
   volt_multiplier[VOLT_MULTIPLIER_LENGTH] = 0;
   writePersistentString(volt_multiplier, VOLT_MULTIPLIER_LENGTH, adr);
+
+  writePersistentString(m_timezone_param, MAX_TIMEZONE_LENGTH, adr);
+
+  char tmp_pos[std::max(MAX_EMULATE_LATITUDE_LENGTH, MAX_EMULATE_LONGITUDE_LENGTH)+1];
+  sprintf(tmp_pos, "%hu", m_emulate_latitude_param+90);
+  writePersistentString(tmp_pos, MAX_EMULATE_LATITUDE_LENGTH, adr);
+  sprintf(tmp_pos, "%hu", m_emulate_longitude_param+180);
+  writePersistentString(tmp_pos, MAX_EMULATE_LONGITUDE_LENGTH, adr);
 
   return EEPROM.commit();
 }

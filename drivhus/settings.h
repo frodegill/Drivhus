@@ -9,10 +9,27 @@
 
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "volt.h"
 
 namespace Drivhus {
+
+class OnChangeListener {
+public:
+  enum FloatType {
+    INDOOR_TEMP,
+    INDOOR_HUMIDITY,
+    OUTDOOR_TEMP,
+    LIGHT,
+    VOLT
+  };
+  enum StringType {
+  };
+
+  virtual void onChangedFloat(OnChangeListener::FloatType type, float value) {}
+  virtual void onChangedString(OnChangeListener::StringType type, const std::string& value) {}
+};
 
 class Settings
 {
@@ -30,6 +47,9 @@ public:
   static constexpr uint8_t MAX_MQTT_USERNAME_LENGTH   = 32;
   static constexpr uint8_t MAX_MQTT_PASSWORD_LENGTH   = 32;
   static constexpr uint8_t VOLT_MULTIPLIER_LENGTH     =  5; //5 digits, actually "0"-"65535". float value is found by dividing by 256 (so 8bit.8bit)
+  static constexpr uint8_t MAX_TIMEZONE_LENGTH        =  3;
+  static constexpr uint8_t MAX_EMULATE_LATITUDE_LENGTH = 3;
+  static constexpr uint8_t MAX_EMULATE_LONGITUDE_LENGTH = 3;
 
 public:
   Settings(uint8_t pin);
@@ -37,6 +57,10 @@ public:
   void loop();
 
   [[nodiscard]] bool isInSetupMode();
+
+  void addChangeListener(OnChangeListener* listener);
+  void notifyFloatChangeListeners(OnChangeListener::FloatType type, float value);
+  void notifyStringChangeListeners(OnChangeListener::StringType type, const std::string& value);
 
   [[nodiscard]] const std::string& getSSID() const {return m_ssid_param;}
   [[nodiscard]] const std::string& getSSIDPassword() const {return m_ssid_password_param;}
@@ -46,6 +70,11 @@ public:
   [[nodiscard]] const std::string& getMQTTUsername() const {return m_mqtt_username_param;}
   [[nodiscard]] const std::string& getMQTTPassword() const {return m_mqtt_password_param;}
   [[nodiscard]] float getVoltMultiplier() const {return m_volt_multiplier_param;}
+  [[nodiscard]] const std::string& getTimezone() const {return m_timezone_param;}
+  [[nodiscard]] int8_t getEmulateLatitude() const {return m_emulate_latitude_param;}
+  [[nodiscard]] int16_t getEmulateLongitude() const {return m_emulate_longitude_param;}
+
+  [[nodiscard]] float getCurrentFanActivateTemp() const {return 40.0f;} //TODO
 
   void setSSID(const std::string& value) {if (isInSetupMode() && m_ssid_param!=value){m_ssid_param=value; m_settings_changed=true;}}
   void setSSIDPassword(const std::string& value) {if (isInSetupMode() && m_ssid_password_param!=value){m_ssid_password_param=value; m_settings_changed=true;}}
@@ -55,6 +84,9 @@ public:
   void setMQTTUsername(const std::string& value) {if (isInSetupMode() && m_mqtt_username_param!=value){m_mqtt_username_param=value; m_settings_changed=true;}}
   void setMQTTPassword(const std::string& value) {if (isInSetupMode() && m_mqtt_password_param!=value){m_mqtt_password_param=value; m_settings_changed=true;}}
   void setVoltMultiplier(float value) {if (isInSetupMode() && value>=0.0f && value<=Volt::MAX_VOLT && m_volt_multiplier_param!=value){m_volt_multiplier_param=value; m_settings_changed=true;}}
+  void setTimezone(const std::string& value) {if (isInSetupMode() && m_timezone_param!=value){m_timezone_param=value; m_settings_changed=true;}}
+  void setEmulateLatitude(int8_t value) {if (isInSetupMode() && value>=-90 && value<=90 && m_emulate_latitude_param!=value){m_emulate_latitude_param=value; m_settings_changed=true;}}
+  void setEmulateLongitude(int16_t value) {if (isInSetupMode() && value>=-180 && value<=180 && m_emulate_longitude_param!=value){m_emulate_longitude_param=value; m_settings_changed=true;}}
   void setShouldFlushSettings();
 
 private:
@@ -74,6 +106,8 @@ private:
   uint8_t m_pin;
 
 public:
+  std::vector<OnChangeListener*> m_change_listeners;
+
   std::string m_ssid_param;
   std::string m_ssid_password_param;
   std::string m_mqtt_servername_param;
@@ -82,6 +116,10 @@ public:
   std::string m_mqtt_username_param;
   std::string m_mqtt_password_param;
   float m_volt_multiplier_param;
+  std::string m_timezone_param;
+  int8_t m_emulate_latitude_param; //-90 (South Pole) to 90 (North Pole)
+  int16_t m_emulate_longitude_param; //-180 (West) to 180 (East)
+
   bool m_settings_changed;
 
   unsigned long m_previous_setup_pin_poll_time;

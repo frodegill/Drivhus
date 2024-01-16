@@ -3,17 +3,32 @@
 
 #include <stdint.h>
 
+#include "settings.h"
+
+
 namespace Drivhus {
 
-class Fan
+class Fan : public OnChangeListener
 {
+private:
+  static constexpr unsigned long ON_OFF_INTERVAL_MS = 15000L;
+
 public:
   Fan(uint8_t pin);
   [[nodiscard]] bool init();
   void loop();
 
+protected:
+  void onChangedFloat(OnChangeListener::FloatType type, float value) override;
+
+private:
+  void toggle(bool on);
+  
 private:
   uint8_t m_pin;
+  unsigned long m_previous_event_time;
+  float m_temp;
+  bool m_activated;
 };
 
 } //namespace

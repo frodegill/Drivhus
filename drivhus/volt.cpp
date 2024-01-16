@@ -31,6 +31,6 @@ void Drivhus::Volt::loop() {
   if ((m_previous_sampling_time+POLL_INTERVAL_MS)<current_time) {
     m_previous_sampling_time = current_time;
     m_volt = analogRead(m_pin)/4095.0f * MAX_VOLT * Drivhus::getSettings()->getVoltMultiplier();
-    Drivhus::getNetwork()->getWebServer()->updateVolt(m_volt);
+    Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::VOLT, m_volt);
   }
 }

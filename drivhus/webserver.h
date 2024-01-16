@@ -12,9 +12,12 @@
 #include <mutex>
 #include <set>
 
+#include "settings.h"
+
+
 namespace Drivhus {
 
-class WebServer
+class WebServer : public OnChangeListener
 {
 public:
   static constexpr unsigned long WARNING_MESSAG_DELAY_MS = 5000L;
@@ -28,13 +31,14 @@ public:
 
   static void onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 
+protected:
+  void onChangedFloat(OnChangeListener::FloatType type, float value) override;
+
 public:
   void updateSetupMode();
   void updateSensor(uint8_t sensor_id);
   void setSensorScanCompleted();
-  void updateTempHumid(uint8_t id, float temp, float humid);
-  void updateLight(float light);
-  void updateVolt(float volt);
+  void updateGrowlightTime(const std::string& time);
 
   size_t wsClientCount() const {return m_ws->count();}
 
@@ -51,6 +55,7 @@ private:
   [[nodiscard]] float getOutdoorTemp() const {return m_temp[1];}
   [[nodiscard]] float getOutdoorHumid() const {return m_humid[1];}
   [[nodiscard]] float getVolt() const {return m_volt;}
+  [[nodiscard]] std::string getGrowlightTime() const {return m_growlight_time;}
 
   void textAll(const std::string& key, const std::string& data);
   void updateNewSensorIdButtons(uint8_t sensor_id);
@@ -58,8 +63,9 @@ private:
   [[nodiscard]] std::string getSensorValueAsString(uint8_t sensor_id) const;
   [[nodiscard]] std::string getUnusedSensorIdsAsString() const;
   [[nodiscard]] uint8_t getUnusedSensorId() const; //Returns the ID if one, and only one, sensor is within the range. UNDEFINED_ID if not.
-  [[nodiscard]] std::string generateSelectOptions(uint8_t sensor_id) const;
+  [[nodiscard]] std::string generateSensorSelectOptions(uint8_t sensor_id) const;
   [[nodiscard]] std::string generateVoltMultiplierCalibration() const;
+  [[nodiscard]] std::string generateTimezoneSelectOptions() const;
 
   void checkIfWarningMessageShouldBeShown();
   void showWarningMessage(const std::string& msg);
@@ -79,6 +85,7 @@ private:
   float m_humid[2];
   float m_light;
   float m_volt;
+  std::string m_growlight_time;
 
   std::list<std::string> m_warning_messages;
   std::recursive_mutex m_warning_messages_mutex;

@@ -33,7 +33,12 @@ void Drivhus::DHT22::loop() {
       m_is_present = true;
       m_temperature = temp_and_humidity.temperature;
       m_humidity = temp_and_humidity.humidity;
-      Drivhus::getNetwork()->getWebServer()->updateTempHumid(m_id, m_temperature, m_humidity);
+      if (m_id == 0) {
+        Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::INDOOR_TEMP, m_temperature);
+        Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::INDOOR_HUMIDITY, m_humidity);
+      } else {
+        Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::OUTDOOR_TEMP, m_temperature);
+      }
     } else {
       m_is_present = false;
     }
