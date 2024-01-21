@@ -9,9 +9,7 @@ Drivhus::DHT22::DHT22(uint8_t id, uint8_t pin)
 : m_id(id),
   m_pin(pin),
   m_previous_sampling_time(0L),
-  m_is_present(false),
-  m_temperature(0.0f),
-  m_humidity(0.0f) {
+  m_is_present(false) {
 }
 
 bool Drivhus::DHT22::init() {
@@ -31,13 +29,12 @@ void Drivhus::DHT22::loop() {
     TempAndHumidity temp_and_humidity = m_dht.getTempAndHumidity();
     if (m_dht.getStatus() == DHTesp::ERROR_NONE) {
       m_is_present = true;
-      m_temperature = temp_and_humidity.temperature;
-      m_humidity = temp_and_humidity.humidity;
       if (m_id == 0) {
-        Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::INDOOR_TEMP, m_temperature);
-        Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::INDOOR_HUMIDITY, m_humidity);
+        Drivhus::getSettings()->setIndoorTemp(temp_and_humidity.temperature);
+        Drivhus::getSettings()->setIndoorHumidity(temp_and_humidity.humidity);
       } else {
-        Drivhus::getSettings()->notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType::OUTDOOR_TEMP, m_temperature);
+        Drivhus::getSettings()->setOutdoorTemp(temp_and_humidity.temperature);
+        Drivhus::getSettings()->setOutdoorHumidity(temp_and_humidity.humidity);
       }
     } else {
       m_is_present = false;

@@ -14,8 +14,8 @@ namespace Drivhus {
 # define PI (3.1415926535897932384626433832795)
 #endif
 
-#define degToRad(angleInDegrees) ((angleInDegrees) * PI / 180.0f)
-#define radToDeg(angleInRadians) ((angleInRadians) * 180.0f / PI)
+#define degToRad(angleInDegrees) ((angleInDegrees) * PI / 180.0)
+#define radToDeg(angleInRadians) ((angleInRadians) * 180.0 / PI)
 
 #define ON (true)
 #define OFF (false)
@@ -81,9 +81,10 @@ class Waterlevel; //Waterlevel sensors
 [[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel();
 
 
-std::string floatToString(const float& value, uint8_t precision);
-std::string uint8ToHex(uint8_t value);
-std::string uint16ToHex(uint16_t value);
+[[nodiscard]] const TimezoneInfo* getTimezoneInfo(const std::string& timezone);
+[[nodiscard]] std::string floatToString(const float& value, uint8_t precision);
+[[nodiscard]] std::string uint8ToHex(uint8_t value);
+[[nodiscard]] std::string uint16ToHex(uint16_t value);
 
 } //namespace
 

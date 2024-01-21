@@ -21,22 +21,29 @@ public:
     INDOOR_TEMP,
     INDOOR_HUMIDITY,
     OUTDOOR_TEMP,
+    OUTDOOR_HUMIDITY,
     LIGHT,
-    VOLT
-  };
-  enum StringType {
+    VOLT,
+    SUNRISE,
+    SUNSET
   };
 
-  virtual void onChangedFloat(OnChangeListener::FloatType type, float value) {}
-  virtual void onChangedString(OnChangeListener::StringType type, const std::string& value) {}
+  virtual void onIndoorTempChanged(float /*value*/) {}
+  virtual void onIndoorHumidityChanged(float /*value*/) {}
+  virtual void onOutdoorTempChanged(float /*value*/) {}
+  virtual void onOutdoorHumidityChanged(float /*value*/) {}
+  virtual void onLightChanged(float /*value*/) {}
+  virtual void onVoltChanged(float /*value*/) {}
+  virtual void onSunriseChanged(float /*value*/) {}
+  virtual void onSunsetChanged(float /*value*/) {}
 };
 
 class Settings
 {
 public:
-  static constexpr uint8_t  EEPROM_INITIALIZED_MARKER = 0xF2; //Just a magic number. CHange when EEPROM data format is incompatibly changed
+  static constexpr uint8_t  EEPROM_INITIALIZED_MARKER = 0xF1; //Just a magic number. CHange when EEPROM data format is incompatibly changed
   static constexpr const char* SETUP_SSID = "drivhus-setup";
-  static constexpr const char*  DEFAULT_SERVERID = "/MiniDrivhus/1/";
+  static constexpr const char*  DEFAULT_SERVERID = "/Drivhus/1/";
   static constexpr unsigned long SETUP_PIN_POLL_INTERVAL_MS = 2000; //If system has been disconnected this long, switch to AccessPoint mode
 
   static constexpr uint8_t MAX_SSID_LENGTH            = 32;
@@ -48,20 +55,20 @@ public:
   static constexpr uint8_t MAX_MQTT_PASSWORD_LENGTH   = 32;
   static constexpr uint8_t VOLT_MULTIPLIER_LENGTH     =  5; //5 digits, actually "0"-"65535". float value is found by dividing by 256 (so 8bit.8bit)
   static constexpr uint8_t MAX_TIMEZONE_LENGTH        =  3;
-  static constexpr uint8_t MAX_EMULATE_LATITUDE_LENGTH = 3;
-  static constexpr uint8_t MAX_EMULATE_LONGITUDE_LENGTH = 3;
+  static constexpr uint8_t MAX_EMULATE_LATLONG_LENGTH =  3;
 
 public:
   Settings(uint8_t pin);
   [[nodiscard]] bool init();
   void loop();
 
-  [[nodiscard]] bool isInSetupMode();
+  [[nodiscard]] bool isInSetupMode(bool force_read = false);
 
   void addChangeListener(OnChangeListener* listener);
+private:
   void notifyFloatChangeListeners(OnChangeListener::FloatType type, float value);
-  void notifyStringChangeListeners(OnChangeListener::StringType type, const std::string& value);
 
+public:
   [[nodiscard]] const std::string& getSSID() const {return m_ssid_param;}
   [[nodiscard]] const std::string& getSSIDPassword() const {return m_ssid_password_param;}
   [[nodiscard]] const std::string& getMQTTServername() const {return m_mqtt_servername_param;}
@@ -102,6 +109,24 @@ private:
   void checkIfSettingsShouldBeFlushed();
   void flushSettings();
 
+public:
+  void setIndoorTemp(float value) {m_indoor_temp=value; notifyFloatChangeListeners(OnChangeListener::FloatType::INDOOR_TEMP, value);}
+  void setIndoorHumidity(float value) {m_indoor_humidity=value; notifyFloatChangeListeners(OnChangeListener::FloatType::INDOOR_HUMIDITY, value);}
+  void setOutdoorTemp(float value) {m_outdoor_temp=value; notifyFloatChangeListeners(OnChangeListener::FloatType::OUTDOOR_TEMP, value);}
+  void setOutdoorHumidity(float value) {m_outdoor_humidity=value; notifyFloatChangeListeners(OnChangeListener::FloatType::OUTDOOR_HUMIDITY, value);}
+  void setLight(float value) {m_light=value; notifyFloatChangeListeners(OnChangeListener::FloatType::LIGHT, value);}
+  void setVolt(float value) {m_volt=value; notifyFloatChangeListeners(OnChangeListener::FloatType::VOLT, value);}
+  void setSunrise(float value) {m_sunrise=value; Serial.println("Setting sunrise"); notifyFloatChangeListeners(OnChangeListener::FloatType::SUNRISE, value);}
+  void setSunset(float value) {m_sunset=value; notifyFloatChangeListeners(OnChangeListener::FloatType::SUNSET, value);}
+  [[nodiscard]] float getIndoorTemp() const {return m_indoor_temp;}
+  [[nodiscard]] float getIndoorHumidity() const {return m_indoor_humidity;}
+  [[nodiscard]] float getOutdoorTemp() const {return m_outdoor_temp;}
+  [[nodiscard]] float getOutdoorHumidity() const {return m_outdoor_humidity;}
+  [[nodiscard]] float getLight() const {return m_light;}
+  [[nodiscard]] float getVolt() const {return m_volt;}
+  [[nodiscard]] float getSunrise() const {return m_sunrise;}
+  [[nodiscard]] float getSunset() const {return m_sunset;}
+
 private:
   uint8_t m_pin;
 
@@ -127,6 +152,15 @@ public:
 
   bool m_should_flush_settings;
   std::recursive_mutex m_should_flush_settings_mutex;
+
+  float m_indoor_temp;
+  float m_indoor_humidity;
+  float m_outdoor_temp;
+  float m_outdoor_humidity;
+  float m_light;
+  float m_volt;
+  float m_sunrise;
+  float m_sunset;
 };
 
 } //namespace

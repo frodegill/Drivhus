@@ -19,7 +19,7 @@ public:
   void loop();
 
 protected:
-  void onChangedFloat(OnChangeListener::FloatType type, float value) override;
+  void onIndoorTempChanged(float value) override {m_temp=value;}
 
 private:
   void toggle(bool on);

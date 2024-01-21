@@ -80,7 +80,7 @@ std::shared_ptr<Drivhus::Network> g_network;
 std::shared_ptr<Drivhus::NTP> g_ntp;
 [[nodiscard]] std::shared_ptr<Drivhus::NTP> Drivhus::getNTP() {
   if (!g_ntp) {
-    const Drivhus::TimezoneInfo* tz = Drivhus::NTP::getTimezoneInfo(Drivhus::getSettings()->getTimezone());
+    const Drivhus::TimezoneInfo* tz = Drivhus::getTimezoneInfo(Drivhus::getSettings()->getTimezone());
     g_ntp = std::make_shared<Drivhus::NTP>(Timezone(tz->dst, tz->regular));
   }
   return g_ntp;
@@ -116,6 +116,15 @@ std::shared_ptr<Drivhus::Waterlevel> g_waterlevel;
     g_waterlevel = std::make_shared<Drivhus::Waterlevel>(I_WATERLEVEL_LOW_PIN, I_WATERLEVEL_HIGH_PIN, O_WATER_VALVE_PIN);
   }
   return g_waterlevel;
+}
+
+const Drivhus::TimezoneInfo* Drivhus::getTimezoneInfo(const std::string& timezone) {
+  for (size_t i=0; i<sizeof(g_timezones)/sizeof(g_timezones[0]); i++) {
+    if (timezone.compare(g_timezones[i].code)==0) {
+      return &g_timezones[i];
+    }
+  }
+  return &g_timezones[0];
 }
 
 std::string Drivhus::floatToString(const float& value, uint8_t precision) {

@@ -41,12 +41,6 @@ void Drivhus::Fan::loop() {
   }
 }
 
-void Drivhus::Fan::onChangedFloat(OnChangeListener::FloatType type, float value) {
-  switch(type) {
-    case INDOOR_TEMP: m_temp = value;
-  };
-}
-
 void Drivhus::Fan::toggle(bool on) {
   m_activated = on;
   m_previous_event_time = millis();

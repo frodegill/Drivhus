@@ -38,15 +38,9 @@ public:
 public:
   [[nodiscard]] bool getLocalTime(time_t& local_time);
   [[nodiscard]] struct tm* getLocalTm();
-  [[nodiscard]] bool isLeapYear();
-  [[nodiscard]] constexpr bool isLeapYear(int year) {return year%4==0 && (year%100!=0 || year%400==0);}
-  [[nodiscard]] float getSunrise() const {return m_sunrise;}
-  [[nodiscard]] float getSunset() const {return m_sunset;}
-
-  [[nodiscard]] static const TimezoneInfo* getTimezoneInfo(const std::string& timezone);
 
 private:
-  void calculateEqtimeMinutesAndHourAngleDegrees(float latitude, float longitude, float& eqtime, float& ha);
+  [[nodiscard]] bool calculateSunriseSunset(float latitude, float longitude, float& sunrise, float& sunset);
 
 public:
   static time_t requestNTPUTCTime();
@@ -55,13 +49,13 @@ private:
   void handleNTPResponse();
 
 private:
+  bool m_callbacks_are_set;
   uint8_t m_packet_buffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
   WiFiUDP m_udp;
   Timezone m_timezone;
 
   unsigned long m_previous_ntp_request_time;
   uint32_t m_previous_calculated_date;
-  float m_sunrise, m_sunset;
 };
 
 } //namespace

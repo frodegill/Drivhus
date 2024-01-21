@@ -32,13 +32,19 @@ public:
   static void onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 
 protected:
-  void onChangedFloat(OnChangeListener::FloatType type, float value) override;
+  virtual void onIndoorTempChanged(float value) override ;
+  virtual void onIndoorHumidityChanged(float value) override ;
+  virtual void onOutdoorTempChanged(float value) override ;
+  virtual void onOutdoorHumidityChanged(float value) override ;
+  virtual void onLightChanged(float value) override ;
+  virtual void onVoltChanged(float value) override ;
+  virtual void onSunriseChanged(float value) override ;
+  virtual void onSunsetChanged(float value) override ;
 
 public:
   void updateSetupMode();
   void updateSensor(uint8_t sensor_id);
   void setSensorScanCompleted();
-  void updateGrowlightTime(const std::string& time);
 
   size_t wsClientCount() const {return m_ws->count();}
 
@@ -59,6 +65,7 @@ private:
 
   void textAll(const std::string& key, const std::string& data);
   void updateNewSensorIdButtons(uint8_t sensor_id);
+  void updateGrowlightTime();
 
   [[nodiscard]] std::string getSensorValueAsString(uint8_t sensor_id) const;
   [[nodiscard]] std::string getUnusedSensorIdsAsString() const;
@@ -85,6 +92,8 @@ private:
   float m_humid[2];
   float m_light;
   float m_volt;
+  float m_sunrise;
+  float m_sunset;
   std::string m_growlight_time;
 
   std::list<std::string> m_warning_messages;

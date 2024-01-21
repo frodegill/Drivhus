@@ -31,7 +31,10 @@ void Drivhus::Network::loop() {
   }
 
   if (!m_is_in_accesspoint_mode) {
-    if (!isWiFiConnected()) {
+    if (Drivhus::getSettings()->isInSetupMode()) {
+      Serial.println("Activating AP mode for Setup");
+      activateWiFiAccessPoint();
+    } else if (!isWiFiConnected()) {
       if (m_wifi_disconnected_since == 0L) {
         Serial.println("WiFi is in Disconnected state");
         m_wifi_disconnected_since = current_time;
@@ -41,12 +44,6 @@ void Drivhus::Network::loop() {
       if (Drivhus::getSettings()->getSSID().empty() || (m_wifi_disconnected_since+MAX_WIFI_RECOVERY_DURATION_MS)<current_time) {
         Serial.println("WiFi couldn't connect. Activating AP mode");
         activateWiFiAccessPoint();
-      } else if (m_is_in_accesspoint_mode && //If we have been in AP mode too long, and no clients use it, try to switch back to normal mode
-                !Drivhus::getSettings()->getSSID().empty() &&
-                m_webserver->wsClientCount()==0 &&
-                (m_wifi_accesspoint_mode_since+MAX_AP_WITHOUT_CLIENTS_DURATION_MS)<current_time) {
-        Serial.println("Switching back to normal WiFi mode");
-        activateWiFiStation();
       }
     } else {
       if (m_wifi_disconnected_since != 0L) {
@@ -55,7 +52,8 @@ void Drivhus::Network::loop() {
       }
     }
   } else {
-    if (!Drivhus::getSettings()->getSSID().empty() &&
+    if (!Drivhus::getSettings()->isInSetupMode() &&
+        !Drivhus::getSettings()->getSSID().empty() &&
         m_webserver->wsClientCount()==0 &&
         (m_wifi_accesspoint_mode_since+MAX_AP_WITHOUT_CLIENTS_DURATION_MS)<current_time) {
       Serial.println("Switching back to normal WiFi mode");

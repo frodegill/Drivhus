@@ -15,7 +15,15 @@ Drivhus::Settings::Settings(uint8_t pin)
   m_settings_changed(false),
   m_previous_setup_pin_poll_time(0L),
   m_in_setup_mode(false),
-  m_should_flush_settings(false) {
+  m_should_flush_settings(false),
+  m_indoor_temp(0.0f),
+  m_indoor_humidity(0.0f),
+  m_outdoor_temp(0.0f),
+  m_outdoor_humidity(0.0f),
+  m_light(0.0f),
+  m_volt(0.0f),
+  m_sunrise(0.0f),
+  m_sunset(0.0f) {
 }
 
 bool Drivhus::Settings::init() {
@@ -25,10 +33,10 @@ bool Drivhus::Settings::init() {
   EEPROM.begin(1 + 
                MAX_SSID_LENGTH+1 + MAX_SSID_PASSWORD_LENGTH+1 +
                MAX_MQTT_SERVERNAME_LENGTH+1 + MAX_MQTT_SERVERPORT_LENGTH+1 + MAX_MQTT_SERVERID_LENGTH+1 + MAX_MQTT_USERNAME_LENGTH+1 + MAX_MQTT_PASSWORD_LENGTH+1 +
-               VOLT_MULTIPLIER_LENGTH+1 + MAX_TIMEZONE_LENGTH+1 + MAX_EMULATE_LATITUDE_LENGTH+1 + MAX_EMULATE_LONGITUDE_LENGTH+1);
+               VOLT_MULTIPLIER_LENGTH+1 + MAX_TIMEZONE_LENGTH+1 + MAX_EMULATE_LATLONG_LENGTH+1 + MAX_EMULATE_LATLONG_LENGTH+1);
 
   readPersistentParams();
-  m_in_setup_mode = isInSetupMode();
+  m_in_setup_mode = isInSetupMode(true);
   return true;
 }
 
@@ -46,9 +54,10 @@ void Drivhus::Settings::loop() {
   checkIfSettingsShouldBeFlushed();
 }
 
-bool Drivhus::Settings::isInSetupMode() {
+bool Drivhus::Settings::isInSetupMode(bool force_read) {
   const unsigned long current_time = millis();
-  if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
+  if (force_read ||
+      (m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
     m_previous_setup_pin_poll_time = current_time;
     m_in_setup_mode = digitalRead(m_pin)==LOW;
   }
@@ -61,13 +70,16 @@ void Drivhus::Settings::addChangeListener(Drivhus::OnChangeListener* listener) {
 
 void Drivhus::Settings::notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType type, float value) {
   for (auto listener : m_change_listeners) {
-    listener->onChangedFloat(type, value);
-  }
-}
-
-void Drivhus::Settings::notifyStringChangeListeners(Drivhus::OnChangeListener::StringType type, const std::string& value) {
-  for (auto listener : m_change_listeners) {
-    listener->onChangedString(type, value);
+    switch(type) {
+      case Drivhus::OnChangeListener::FloatType::INDOOR_TEMP: listener->onIndoorTempChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::INDOOR_HUMIDITY: listener->onIndoorHumidityChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::OUTDOOR_TEMP: listener->onOutdoorTempChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::OUTDOOR_HUMIDITY: listener->onOutdoorHumidityChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::LIGHT: listener->onLightChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::VOLT: listener->onVoltChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::SUNRISE: listener->onSunriseChanged(value); break;
+      case Drivhus::OnChangeListener::FloatType::SUNSET: listener->onSunsetChanged(value); break;
+    };
   }
 }
 
@@ -83,12 +95,12 @@ void Drivhus::Settings::readPersistentString(std::string& s, int max_length, int
   do
   {
     c = EEPROM.read(adr++);
-    if (i<max_length)
-    {
-      d.emplace_back(c);
+    if (c == 0) {
+      break;
     }
-  } while (++i<max_length && c!=0);
-  s = std::string(d.begin(), d.end());
+    d.emplace_back(c);
+  } while (++i<max_length);
+  s = d.empty() ? "" : std::string(d.begin(), d.end());
 }
 
 void Drivhus::Settings::readPersistentByte(uint8_t& b, int& adr) {
@@ -131,20 +143,22 @@ void Drivhus::Settings::readPersistentParams() {
 
     readPersistentString(m_timezone_param, MAX_TIMEZONE_LENGTH, adr);
 
-    readPersistentString(temp, MAX_EMULATE_LATITUDE_LENGTH, adr);
-    m_emulate_latitude_param = static_cast<int8_t>(std::stoi(temp) - 90);
-
-    readPersistentString(temp, MAX_EMULATE_LONGITUDE_LENGTH, adr);
-    m_emulate_longitude_param = static_cast<int16_t>(std::stoi(temp) - 180);
+    readPersistentString(temp, MAX_EMULATE_LATLONG_LENGTH, adr);
+    m_emulate_latitude_param = static_cast<int8_t>(temp.length()==0 ? 0 : std::stoi(temp) - 90);
+    readPersistentString(temp, MAX_EMULATE_LATLONG_LENGTH, adr);
+    m_emulate_longitude_param = static_cast<int16_t>(temp.length()==0 ? 0 : std::stoi(temp) - 180);
   }
 }
 
 void Drivhus::Settings::writePersistentString(const std::string& s, size_t max_length, int& adr) {
-  for (size_t i=0; i<utf8ByteArrayLength(s, max_length); i++)
+  size_t length = utf8ByteArrayLength(s, max_length);
+  for (size_t i=0; i<length; i++)
   {
     EEPROM.write(adr++, s.at(i));
   }
-  EEPROM.write(adr++, 0);
+  if (length < max_length) {
+    EEPROM.write(adr++, 0);
+  }
 }
 
 void Drivhus::Settings::writePersistentByte(uint8_t b, int& adr) {
@@ -175,11 +189,11 @@ bool Drivhus::Settings::writePersistentParams() {
 
   writePersistentString(m_timezone_param, MAX_TIMEZONE_LENGTH, adr);
 
-  char tmp_pos[std::max(MAX_EMULATE_LATITUDE_LENGTH, MAX_EMULATE_LONGITUDE_LENGTH)+1];
-  sprintf(tmp_pos, "%hu", m_emulate_latitude_param+90);
-  writePersistentString(tmp_pos, MAX_EMULATE_LATITUDE_LENGTH, adr);
-  sprintf(tmp_pos, "%hu", m_emulate_longitude_param+180);
-  writePersistentString(tmp_pos, MAX_EMULATE_LONGITUDE_LENGTH, adr);
+  char tmp_pos[MAX_EMULATE_LATLONG_LENGTH+1];
+  snprintf(tmp_pos, MAX_EMULATE_LATLONG_LENGTH+1, "%hu", m_emulate_latitude_param+90);
+  writePersistentString(tmp_pos, MAX_EMULATE_LATLONG_LENGTH, adr);
+  snprintf(tmp_pos, MAX_EMULATE_LATLONG_LENGTH+1, "%hu", m_emulate_longitude_param+180);
+  writePersistentString(tmp_pos, MAX_EMULATE_LATLONG_LENGTH, adr);
 
   return EEPROM.commit();
 }

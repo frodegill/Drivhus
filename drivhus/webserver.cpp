@@ -2,6 +2,7 @@
 #include "webserver.h"
 
 #include <cstring>
+#include <iomanip>
 #include <sstream>
 
 #include "global.h"
@@ -35,7 +36,8 @@ MQTT port:<input type="number" id="MQTT_PORT" min="0" max="65535" value="%MQTT_P
 MQTT ID postfix:<input type="text" id="MQTT_ID" maxlength="32" value="%MQTT_ID%"><br>
 MQTT username:<input type="text" id="MQTT_USERNAME" maxlength="32" value="%MQTT_USERNAME%"><br>
 MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%MQTT_PASSWORD%"><br>
-Timezone:<select id="TZ">%TZO%</select>
+Timezone:<select id="TZ">%TZO%</select><br>
+Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max="90" value="%EM_LATITUDE%">N/S <input type="number" id="EM_LONGITUDE" min="-180" max="180" value="%EM_LONGITUDE%">E/W<br>
 <button onClick="updateSetup()">Submit</button> <button onClick="testRelays()">Test relays</button>
 <hr>
 </div>
@@ -67,7 +69,7 @@ Timezone:<select id="TZ">%TZO%</select>
 <tr><td>Outdoor temp</td><td><span id="OTEMP">%OTEMP%</span><span>&nbsp;C</span></td></tr>
 <tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span><span>&nbsp;%%RH</span></td></tr>
 <tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span><span id="VM">%VM%</span></td></tr>
-<tr><td>Growlight</td><td><span id="GT">%GT%</span></td></tr>
+<tr><td>Growlight time</td><td><span id="GT">%GT%</span></td></tr>
 </table>
 </div>
 </body>
@@ -116,7 +118,8 @@ Timezone:<select id="TZ">%TZO%</select>
     }
   }
   function onLoad(event){initWebSocket();}
-  function updateSetup(){websocket.send('SETUP'+elmValue('SSID')+'\n'+elmValue('SSID_PASSWORD')+'\n'+elmValue('MQTT_SERVER')+'\n'+elmValue('MQTT_PORT')+'\n'+elmValue('MQTT_ID')+'\n'+elmValue('MQTT_USERNAME')+'\n'+elmValue('MQTT_PASSWORD')+'\n'+elmValue('TZ'));}
+  function updateSetup(){websocket.send('SETUP'+elmValue('SSID')+'\n'+elmValue('SSID_PASSWORD')+'\n'+elmValue('MQTT_SERVER')+'\n'+elmValue('MQTT_PORT')+'\n'+elmValue('MQTT_ID')+'\n'+elmValue('MQTT_USERNAME')+'\n'+elmValue('MQTT_PASSWORD')+'\n'
+    +elmValue('TZ')+'\n'+elmValue('EM_LATITUDE')+'\n'+elmValue('EM_LONGITUDE'));}
   function testRelays(){websocket.send('TR');}
   function updateSensorId(sensorIdHex){websocket.send('NSI'+sensorIdHex+elmValue('SO'+sensorIdHex));}
   function updateVoltMultiplier(){websocket.send('VM'+elmValue('VOLT_MULTIPLIER'));}
@@ -129,17 +132,21 @@ Timezone:<select id="TZ">%TZO%</select>
 Drivhus::WebServer::WebServer()
 : Drivhus::OnChangeListener(),
   m_is_showing_setup(false),
-  m_light(0.0f),
-  m_volt(0.0f),
   m_warning_message_time(0L),
   m_is_testing_relays(false),
   m_relay_test_event_time(0L),
   m_relay_test_index(0),
   m_relay_test_on(false)
 {
-  m_temp[0] = m_temp[1] = 0.0f,
-  m_humid[0] = m_humid[1] = 0.0f;
   Drivhus::getSettings()->addChangeListener(this);
+  m_temp[0] = Drivhus::getSettings()->getIndoorTemp();
+  m_humid[0] = Drivhus::getSettings()->getIndoorHumidity();
+  m_temp[1] = Drivhus::getSettings()->getOutdoorTemp();
+  m_humid[1] = Drivhus::getSettings()->getOutdoorHumidity();
+  m_light = Drivhus::getSettings()->getLight();
+  m_volt = Drivhus::getSettings()->getVolt();
+  m_sunrise = Drivhus::getSettings()->getSunrise();
+  m_sunset = Drivhus::getSettings()->getSunset();
 }
 
 bool Drivhus::WebServer::init() {
@@ -154,6 +161,7 @@ bool Drivhus::WebServer::init() {
   });
 
   m_server->begin();
+  updateGrowlightTime();
   return true;
 }
 
@@ -228,34 +236,55 @@ void Drivhus::WebServer::setSensorScanCompleted() {
   notifyClients("CSI", "-");
 }
 
-void Drivhus::WebServer::onChangedFloat(OnChangeListener::FloatType type, float value) {
-  switch(type) {
-    case INDOOR_TEMP: if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
-                        m_temp[0]=value; notifyClients("ITEMP", String(value, 1).c_str());
-                      }
-                      break;
-    case INDOOR_HUMIDITY: if (value<(m_humid[0]*0.99f) || value>(m_humid[0]*1.01f)) {
-                            m_humid[0]=value; notifyClients("IHUMID", String(value, 1).c_str());
-                          }
-                          break;
-    case OUTDOOR_TEMP: if (value<(m_temp[1]*0.99f) || value>(m_temp[1]*1.01f)) {
-                         m_temp[1]=value; notifyClients("OTEMP", String(value, 1).c_str());
-                       }
-                       break;
-    case LIGHT: if (value<(m_light*0.99f) || value>(m_light*1.01f)) {
-                  m_light=value; notifyClients("ILIGHT", String(value, 1).c_str());
-                }
-                break;
-    case VOLT: if (value<(m_volt*0.99f) || value>(m_volt*1.01f)) {
-                 m_volt=value; notifyClients("VOLT", String(value, 2).c_str());
-               }
-               break;
-  };
+void Drivhus::WebServer::onIndoorTempChanged(float value) {
+  if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
+    m_temp[0]=value;
+    notifyClients("ITEMP", String(value, 1).c_str());
+  }
 }
 
-void Drivhus::WebServer::updateGrowlightTime(const std::string& time) {
-  m_growlight_time = time;
-  notifyClients("GT", m_growlight_time.c_str());
+void Drivhus::WebServer::onIndoorHumidityChanged(float value) {
+  if (value<(m_humid[0]*0.99f) || value>(m_humid[0]*1.01f)) {
+    m_humid[0]=value;
+    notifyClients("IHUMID", String(value, 1).c_str());
+  }
+}
+
+void Drivhus::WebServer::onOutdoorTempChanged(float value) {
+  if (value<(m_temp[1]*0.99f) || value>(m_temp[1]*1.01f)) {
+    m_temp[1]=value;
+    notifyClients("OTEMP", String(value, 1).c_str());
+  }
+}
+
+void Drivhus::WebServer::onOutdoorHumidityChanged(float value) {
+  if (value<(m_humid[1]*0.99f) || value>(m_humid[1]*1.01f)) {
+    m_humid[1]=value;
+    notifyClients("OHUMID", String(value, 1).c_str());
+  }
+}
+
+void Drivhus::WebServer::onLightChanged(float value) {
+  if (value<(m_light*0.99f) || value>(m_light*1.01f)) {
+    m_light=value;
+    notifyClients("ILIGHT", String(value, 1).c_str());
+  }
+}
+void Drivhus::WebServer::onVoltChanged(float value) {
+  if (value<(m_volt*0.99f) || value>(m_volt*1.01f)) {
+    m_volt=value;
+    notifyClients("VOLT", String(value, 2).c_str());
+  }
+}
+
+void Drivhus::WebServer::onSunriseChanged(float value) {
+  m_sunrise = value;
+  updateGrowlightTime();
+}
+
+void Drivhus::WebServer::onSunsetChanged(float value) {
+  m_sunset = value;
+  updateGrowlightTime();
 }
 
 void Drivhus::WebServer::addWarningMessage(const std::string& msg) {
@@ -281,6 +310,8 @@ void Drivhus::WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t
           case 5: Drivhus::getSettings()->setMQTTUsername(line); break;
           case 6: Drivhus::getSettings()->setMQTTPassword(line); break;
           case 7: Drivhus::getSettings()->setTimezone(line); break;
+          case 8: Drivhus::getSettings()->setEmulateLatitude(static_cast<int8_t>(std::min(90,std::max(-90,std::stoi(line))))); break;
+          case 9: Drivhus::getSettings()->setEmulateLongitude(static_cast<int16_t>(std::min(180,std::max(-180,std::stoi(line))))); break;
         }
       }
       Drivhus::getSettings()->setShouldFlushSettings();
@@ -351,6 +382,10 @@ String Drivhus::WebServer::processor(const String& var){
       return String(Drivhus::getSettings()->getMQTTPassword().c_str());
     } else if (var == "TZO") {
       return String(Drivhus::getNetwork()->getWebServer()->generateTimezoneSelectOptions().c_str());
+    } else if (var == "EM_LATITUDE") {
+      return String(Drivhus::getSettings()->getEmulateLatitude());
+    } else if (var == "EM_LONGITUDE") {
+      return String(Drivhus::getSettings()->getEmulateLongitude());
     }
   }
 #if 0
@@ -379,6 +414,27 @@ void Drivhus::WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
       notifyClients("NIX", generateSensorSelectOptions(sensor_id));
     }
   }
+}
+
+void Drivhus::WebServer::updateGrowlightTime() {
+  Serial.println("updateGrowlightTime");
+  uint8_t from_hour = static_cast<uint8_t>(m_sunrise/60);
+  uint8_t from_minutes = static_cast<uint8_t>(m_sunrise - from_hour*60);
+  uint8_t to_hour = static_cast<uint8_t>(m_sunset/60);
+  uint8_t to_minutes = static_cast<uint8_t>(m_sunset - to_hour*60);
+
+  std::stringstream ss;
+  ss << std::setw(2) << std::setfill('0') << std::to_string(from_hour);
+  ss << ':';
+  ss << std::setw(2) << std::setfill('0') << std::to_string(from_minutes);
+  ss << " - ";
+  ss << std::setw(2) << std::setfill('0') << std::to_string(to_hour);
+  ss << ':';
+  ss << std::setw(2) << std::setfill('0') << std::to_string(to_minutes);
+
+  m_growlight_time = ss.str();
+  Serial.println(m_growlight_time.c_str());
+  notifyClients("GT", m_growlight_time);
 }
 
 std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const {
