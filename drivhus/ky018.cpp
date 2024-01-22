@@ -7,13 +7,13 @@
 
 #include "global.h"
 #include "network.h"
+#include "settings.h"
 #include "webserver.h"
 
 
 Drivhus::KY018::KY018(uint8_t pin)
 : m_pin(pin),
-  m_previous_sampling_time(0L),
-  m_light_percentage(0.0f) {
+  m_previous_sampling_time(0L) {
 }
 
 bool Drivhus::KY018::init() {
@@ -29,7 +29,7 @@ void Drivhus::KY018::loop() {
 
   if ((m_previous_sampling_time+POLL_INTERVAL_MS)<current_time) {
     m_previous_sampling_time = current_time;
-    m_light_percentage = 100.0f - analogRead(m_pin)/40.95f;
-    Drivhus::getSettings()->setLight(m_light_percentage);
+    float light_percentage = 100.0f - analogRead(m_pin)/40.95f;
+    Drivhus::getSettings()->setLight(light_percentage);
   }
 }

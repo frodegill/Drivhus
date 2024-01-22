@@ -15,12 +15,9 @@ public:
   [[nodiscard]] bool init();
   void loop();
 
-  [[nodiscard]] float getLightPercentage() const {return m_light_percentage;}
-
 private:
   uint8_t m_pin;
   unsigned long m_previous_sampling_time;
-  float m_light_percentage;
 };
 
 } //namespace
