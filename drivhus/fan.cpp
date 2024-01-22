@@ -7,7 +7,6 @@
 #endif
 
 #include "global.h"
-#include "settings.h"
 
 
 Drivhus::Fan::Fan(uint8_t pin)

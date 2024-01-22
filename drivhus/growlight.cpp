@@ -10,14 +10,18 @@
 
 
 Drivhus::Growlight::Growlight(uint8_t pin)
-: m_pin(pin),
-  m_is_activated(false)
+: Drivhus::OnChangeListener(),
+  m_pin(pin),
+  m_sunrise(0.0f),
+  m_sunset(0.0f),
+  m_activated(false)
 {
+  Drivhus::getSettings()->addChangeListener(this);
 }
 
 bool Drivhus::Growlight::init() {
   pinMode(m_pin, OUTPUT);
-  digitalWrite(m_pin, m_is_activated ? HIGH : LOW);
+  toggle(OFF);
   return true;
 }
 
@@ -35,17 +39,14 @@ void Drivhus::Growlight::loop() {
       }
     }
 
-    if (within_growlight_period != m_is_activated) {
-      digitalWrite(m_pin, within_growlight_period ? HIGH : LOW);
-      m_is_activated = within_growlight_period;
+    if (within_growlight_period != m_activated) {
+      toggle(within_growlight_period);
     }
   }
 }
 
-void Drivhus::Growlight::onSunriseChanged(float value) {
-  m_sunrise = value;
+void Drivhus::Growlight::toggle(bool on) {
+  m_activated = on;
+  digitalWrite(m_pin, on ? HIGH : LOW);
 }
 
-void Drivhus::Growlight::onSunsetChanged(float value) {
-  m_sunset = value;
-}

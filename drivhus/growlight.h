@@ -16,13 +16,15 @@ public:
   void loop();
 
 protected:
-  virtual void onSunriseChanged(float value) override;
-  virtual void onSunsetChanged(float value) override;
+  virtual void onSunriseChanged(float value) override {m_sunrise = value;}
+  virtual void onSunsetChanged(float value) override {m_sunset = value;}
+
+private:
+  void toggle(bool on);
 
 private:
   uint8_t m_pin;
-
-  bool m_is_activated;
+  bool m_activated;
   float m_sunrise;
   float m_sunset;
 };
