@@ -32,14 +32,14 @@ public:
   static void onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 
 protected:
-  virtual void onIndoorTempChanged(float value) override ;
-  virtual void onIndoorHumidityChanged(float value) override ;
-  virtual void onOutdoorTempChanged(float value) override ;
-  virtual void onOutdoorHumidityChanged(float value) override ;
-  virtual void onLightChanged(float value) override ;
-  virtual void onVoltChanged(float value) override ;
-  virtual void onSunriseChanged(float value) override ;
-  virtual void onSunsetChanged(float value) override ;
+  virtual void onIndoorTempChanged(float value) override;
+  virtual void onIndoorHumidityChanged(float value) override;
+  virtual void onOutdoorTempChanged(float value) override;
+  virtual void onOutdoorHumidityChanged(float value) override;
+  virtual void onLightChanged(float value) override;
+  virtual void onVoltChanged(float value) override;
+  virtual void onSunriseChanged(float value) override;
+  virtual void onSunsetChanged(float value) override;
 
 public:
   void updateSetupMode();
