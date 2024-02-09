@@ -116,8 +116,6 @@ public:
 
   [[nodiscard]] bool hasMQTTServer() const {return !m_mqtt_servername_param.empty();}
 
-  [[nodiscard]] float getCurrentFanActivateTemp() const {return 40.0f;} //TODO
-
   void setSSID(const std::string& value) {if (isInSetupMode() && m_ssid_param!=value){m_ssid_param=value; m_settings_changed=true;}}
   void setSSIDPassword(const std::string& value) {if (isInSetupMode() && m_ssid_password_param!=value){m_ssid_password_param=value; m_settings_changed=true;}}
   void setMQTTServername(const std::string& value) {if (isInSetupMode() && m_mqtt_servername_param!=value){m_mqtt_servername_param=value; m_settings_changed=true;}}

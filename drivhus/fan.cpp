@@ -33,9 +33,9 @@ void Drivhus::Fan::loop() {
   }
 
   if ((m_previous_event_time+ON_OFF_INTERVAL_MS)<current_time) {
-    if (m_activated && m_temp<Drivhus::getSettings()->getCurrentFanActivateTemp()) {
+    if (m_activated && m_temp<Drivhus::getSettings()->getFanActivateTemp()) {
       toggle(Drivhus::OFF);
-    } else if (!m_activated && m_temp>=Drivhus::getSettings()->getCurrentFanActivateTemp()) {
+    } else if (!m_activated && m_temp>=Drivhus::getSettings()->getFanActivateTemp()) {
       toggle(Drivhus::ON);
     }
   }
