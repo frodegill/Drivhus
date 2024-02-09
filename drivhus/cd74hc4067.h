@@ -3,17 +3,20 @@
 
 #include <stdint.h>
 
+#include "component.h"
+
+
 namespace Drivhus {
 
-class CD74HC4067
+class CD74HC4067 : public Component
 {
 public:
   static constexpr unsigned long POLL_INTERVAL_MS = 30000;
 
 public:
   CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
   void activate(uint8_t address, unsigned long duration);
   [[nodiscard]] bool isActive() const {return m_activate_time!=0L;}

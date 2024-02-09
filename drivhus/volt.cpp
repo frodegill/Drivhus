@@ -12,7 +12,8 @@
 
 
 Drivhus::Volt::Volt(uint8_t pin)
-: m_pin(pin),
+: Drivhus::Component(),
+  m_pin(pin),
   m_previous_sampling_time(0L) {
 }
 

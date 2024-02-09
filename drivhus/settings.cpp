@@ -3,13 +3,13 @@
 #include <sstream>
 #include <vector>
 
-#include "global.h"
 #include "mqtt.h"
 #include "network.h"
 
 
 Drivhus::Settings::Settings(uint8_t pin)
-: m_pin(pin),
+: Drivhus::Component(),
+  m_pin(pin),
   m_mqtt_serverport_param(Drivhus::MQTT::MQTT_DEFAULT_PORT),
   m_volt_multiplier_param(1.0f),
   m_settings_changed(false),

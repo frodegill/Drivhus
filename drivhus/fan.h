@@ -3,20 +3,21 @@
 
 #include <stdint.h>
 
+#include "component.h"
 #include "settings.h"
 
 
 namespace Drivhus {
 
-class Fan : public OnValueChangeListener
+class Fan : public Component, public OnValueChangeListener
 {
 private:
   static constexpr unsigned long ON_OFF_INTERVAL_MS = 15000L;
 
 public:
   Fan(uint8_t pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
 protected:
   void onIndoorTempChanged(float value) override {m_temp=value;}

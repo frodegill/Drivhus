@@ -3,9 +3,12 @@
 
 #include <stdint.h>
 
+#include "component.h"
+
+
 namespace Drivhus {
 
-class Volt
+class Volt : public Component
 {
 public:
   static constexpr unsigned long POLL_INTERVAL_MS = 30000;
@@ -13,8 +16,8 @@ public:
 
 public:
   Volt(uint8_t pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
 private:
   uint8_t m_pin;

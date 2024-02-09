@@ -24,25 +24,31 @@
   GPIOViewer gpio_viewer;
 #endif
 
+std::vector<std::shared_ptr<Drivhus::Component>> g_components;
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting Drivhus");
 
-  if (!Drivhus::getLog()->init() ||
-      !Drivhus::getSettings()->init() ||
-      !Drivhus::getCD74HC4067()->init() ||
-      !Drivhus::getIndoorDHT22()->init() ||
-      !Drivhus::getOutdoorDHT22()->init() ||
-      !Drivhus::getFan()->init() ||
-      !Drivhus::getGrowlight()->init() ||
-      !Drivhus::getKY018()->init() ||
-      !Drivhus::getVolt()->init() ||
-      !Drivhus::getNetwork()->init() ||
-      !Drivhus::getNTP()->init() ||
-      !Drivhus::getRS485()->init() ||
-      !Drivhus::getWaterlevel()->init() ||
-      !Drivhus::getMQTT()->init()) {
-    Serial.println("Setup failed");
+  g_components.push_back(Drivhus::getLog());
+  g_components.push_back(Drivhus::getSettings());
+  g_components.push_back(Drivhus::getCD74HC4067());
+  g_components.push_back(Drivhus::getIndoorDHT22());
+  g_components.push_back(Drivhus::getOutdoorDHT22());
+  g_components.push_back(Drivhus::getFan());
+  g_components.push_back(Drivhus::getGrowlight());
+  g_components.push_back(Drivhus::getKY018());
+  g_components.push_back(Drivhus::getVolt());
+  g_components.push_back(Drivhus::getNetwork());
+  g_components.push_back(Drivhus::getNTP());
+  g_components.push_back(Drivhus::getRS485());
+  g_components.push_back(Drivhus::getWaterlevel());
+  g_components.push_back(Drivhus::getMQTT());
+
+  for (auto component : g_components) {
+    if (!component->init()) {
+      Serial.println("Setup failed");
+    }
   }
 
 #ifdef GPIO_DEBUG
@@ -52,20 +58,9 @@ void setup() {
 }
 
 void loop() {
-  Drivhus::getLog()->loop();
-  Drivhus::getSettings()->loop();
-  Drivhus::getCD74HC4067()->loop();
-  Drivhus::getIndoorDHT22()->loop();
-  Drivhus::getOutdoorDHT22()->loop();
-  Drivhus::getFan()->loop();
-  Drivhus::getGrowlight()->loop();
-  Drivhus::getKY018()->loop();
-  Drivhus::getVolt()->loop();
-  Drivhus::getNetwork()->loop();
-  Drivhus::getNTP()->loop();
-  Drivhus::getRS485()->loop();
-  Drivhus::getWaterlevel()->loop();
-  Drivhus::getMQTT()->loop();
+  for (auto component : g_components) {
+    component->loop();
+  }
 
   delay(200);
 }

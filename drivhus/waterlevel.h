@@ -7,14 +7,17 @@
 # include <Arduino.h>
 #endif
 
+#include "component.h"
+
+
 namespace Drivhus {
 
-class Waterlevel
+class Waterlevel : public Component
 {
 public:
   Waterlevel(uint8_t low_pin, uint8_t high_pin, uint8_t valve_pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
 private:
   uint8_t m_low_pin;

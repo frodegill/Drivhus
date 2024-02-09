@@ -3,17 +3,18 @@
 
 #include <stdint.h>
 
+#include "component.h"
 #include "settings.h"
 
 
 namespace Drivhus {
 
-class Growlight : public OnValueChangeListener
+class Growlight : public Component, public OnValueChangeListener
 {
 public:
   Growlight(uint8_t pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
 protected:
   virtual void onSunriseChanged(float value) override {m_sunrise = value;}

@@ -12,7 +12,9 @@
 #include <vector>
 
 #include "global.h"
+#include "component.h"
 #include "volt.h"
+
 
 namespace Drivhus {
 
@@ -67,7 +69,7 @@ public:
   virtual void onPlantWateringGraceValueMsChanged(uint8_t plant_id, unsigned long /*value*/) {}
 };
 
-class Settings
+class Settings : public Component
 {
 public:
   static constexpr uint8_t  EEPROM_INITIALIZED_MARKER = 0xF1; //Just a magic number. CHange when EEPROM data format is incompatibly changed
@@ -88,8 +90,8 @@ public:
 
 public:
   Settings(uint8_t pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
   [[nodiscard]] bool isInSetupMode(bool force_read = false);
 

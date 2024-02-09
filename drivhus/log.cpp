@@ -9,7 +9,8 @@
 #include "settings.h"
 
 
-Drivhus::Log::Log(LogLevel log_level, LogMode log_mode) {
+Drivhus::Log::Log(LogLevel log_level, LogMode log_mode)
+: Drivhus::Component() {
   setLogLevel(log_level);
   setLogMode(log_mode);
 }

@@ -10,7 +10,8 @@
 
 
 Drivhus::Fan::Fan(uint8_t pin)
-: Drivhus::OnValueChangeListener(),
+: Drivhus::Component(),
+  Drivhus::OnValueChangeListener(),
   m_pin(pin),
   m_previous_event_time(0L),
   m_temp(0.0f),

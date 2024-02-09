@@ -2,7 +2,8 @@
 
 
 Drivhus::Waterlevel::Waterlevel(uint8_t low_pin, uint8_t high_pin, uint8_t valve_pin)
-: m_low_pin(low_pin),
+: Drivhus::Component(),
+  m_low_pin(low_pin),
   m_high_pin(high_pin),
   m_valve_pin(valve_pin),
   m_water_valve_is_open(false) {

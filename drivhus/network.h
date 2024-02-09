@@ -9,11 +9,13 @@
 
 #include <memory>
 
+#include "component.h"
 #include "webserver.h"
+
 
 namespace Drivhus {
 
-class Network
+class Network : public Component
 {
 public:
   static constexpr const char* SETUP_SSID = "drivhus-setup";
@@ -23,8 +25,8 @@ public:
 
 public:
   Network();
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
   [[nodiscard]] bool isWiFiConnected();
   [[nodiscard]] std::shared_ptr<WebServer> getWebServer() const {return m_webserver;}

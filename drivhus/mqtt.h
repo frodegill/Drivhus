@@ -8,12 +8,13 @@
 # include <PubSubClient.h>
 #endif
 
+#include "component.h"
 #include "settings.h"
 
 
 namespace Drivhus {
 
-class MQTT : public OnValueChangeListener
+class MQTT : public Component, public OnValueChangeListener
 {
 public:
   static constexpr uint16_t MQTT_DEFAULT_PORT = 1883;
@@ -22,8 +23,8 @@ public:
 
 public:
   MQTT();
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
 protected:
   virtual void onPlantMoistureChanged(uint8_t plant_id, float) {registerChange(Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE, 15*1000, plant_id);}

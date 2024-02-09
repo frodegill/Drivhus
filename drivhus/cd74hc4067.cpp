@@ -10,7 +10,8 @@
 
 
 Drivhus::CD74HC4067::CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin)
-: m_s0_pin(s0_pin),
+: Drivhus::Component(),
+  m_s0_pin(s0_pin),
   m_s1_pin(s1_pin),
   m_s2_pin(s2_pin),
   m_s3_pin(s3_pin),

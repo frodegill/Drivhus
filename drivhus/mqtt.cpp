@@ -10,7 +10,8 @@
 
 
 Drivhus::MQTT::MQTT()
-: Drivhus::OnValueChangeListener(),
+: Drivhus::Component(),
+  Drivhus::OnValueChangeListener(),
   m_reconnect_time(0L),
   m_cached_packet_time(0L),
   m_max_cache_time(0L),

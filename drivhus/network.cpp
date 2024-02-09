@@ -5,7 +5,8 @@
 
 
 Drivhus::Network::Network()
-: m_wifi_disconnected_since(0L),
+: Drivhus::Component(),
+  m_wifi_disconnected_since(0L),
   m_wifi_accesspoint_mode_since(0L),
   m_is_in_accesspoint_mode(false) {
   m_ap_ip = std::make_shared<IPAddress>(192, 168, 4, 1);

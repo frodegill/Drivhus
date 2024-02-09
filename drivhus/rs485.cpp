@@ -8,7 +8,8 @@
 
 
 Drivhus::RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
-: m_rx_pin(rx_pin),
+: Drivhus::Component(),
+  m_rx_pin(rx_pin),
   m_tx_pin(tx_pin),
   m_enable_pin(enable_pin),
   m_previous_complete_scan_time(0L),

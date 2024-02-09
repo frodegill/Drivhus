@@ -11,11 +11,12 @@
 #include <memory>
 
 #include "global.h"
+#include "component.h"
 
 
 namespace Drivhus {
 
-class NTP
+class NTP : public Component
 {
 private:
   static constexpr const char* NTP_SERVERNAME = "0.pool.ntp.org";
@@ -27,8 +28,8 @@ private:
 
 public:
   NTP(Timezone&& timezone);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
 public:
   [[nodiscard]] bool getLocalTime(time_t& local_time);

@@ -6,7 +6,8 @@
 
 
 Drivhus::DHT22::DHT22(uint8_t id, uint8_t pin)
-: m_id(id),
+: Drivhus::Component(),
+  m_id(id),
   m_pin(pin),
   m_previous_sampling_time(0L),
   m_is_present(false) {

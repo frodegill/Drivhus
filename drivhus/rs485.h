@@ -14,12 +14,14 @@
 #include <set>
 #include <utility>
 
+#include "component.h"
+
+
 namespace Drivhus {
 
-class RS485
+class RS485 : public Component
 {
 public:
-
   static constexpr uint8_t UNDEFINED_ID = 0;
   static constexpr uint8_t MIN_ID = 1;
   static constexpr uint8_t MAX_ID = 247;
@@ -38,8 +40,8 @@ private:
 
 public:
   RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
   [[nodiscard]] bool isSensorPresent(uint8_t id) const;
   [[nodiscard]] std::set<uint8_t> getPresentSensors() const;

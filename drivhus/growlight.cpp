@@ -11,7 +11,8 @@
 
 
 Drivhus::Growlight::Growlight(uint8_t pin)
-: Drivhus::OnValueChangeListener(),
+: Drivhus::Component(),
+  Drivhus::OnValueChangeListener(),
   m_pin(pin),
   m_sunrise(0.0f),
   m_sunset(0.0f),

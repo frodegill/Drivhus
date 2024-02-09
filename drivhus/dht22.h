@@ -7,14 +7,17 @@
 # include <DHTesp.h>           // Library: DHT_sensor_library_for_ESPx
 #endif
 
+#include "component.h"
+
+
 namespace Drivhus {
 
-class DHT22
+class DHT22 : public Component
 {
 public:
   DHT22(uint8_t id, uint8_t pin);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
   [[nodiscard]] bool isPresent() const {return m_is_present;}
 

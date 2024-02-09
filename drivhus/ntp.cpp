@@ -16,7 +16,8 @@
 /* This class is based on NTP example code, but made non-blocking */
 
 Drivhus::NTP::NTP(Timezone&& timezone)
-: m_callbacks_are_set(false),
+: Drivhus::Component(),
+  m_callbacks_are_set(false),
   m_timezone(timezone),
   m_previous_ntp_request_time(0L),
   m_previous_calculated_date(0) {

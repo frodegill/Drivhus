@@ -7,9 +7,12 @@
 
 #include <string>
 
+#include "component.h"
+
+
 namespace Drivhus {
 
-class Log
+class Log : public Component
 {
 public:
   enum class LogLevel {
@@ -34,8 +37,8 @@ public:
 
 public:
   Log(LogLevel log_level, LogMode log_mode);
-  [[nodiscard]] bool init();
-  void loop();
+  virtual [[nodiscard]] bool init() override;
+  virtual void loop() override;
 
   void setLogLevel(LogLevel log_level);
   void setLogMode(LogMode log_mode);
