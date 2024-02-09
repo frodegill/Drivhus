@@ -8,7 +8,7 @@
 
 namespace Drivhus {
 
-class Growlight : public OnChangeListener
+class Growlight : public OnValueChangeListener
 {
 public:
   Growlight(uint8_t pin);

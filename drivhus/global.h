@@ -1,11 +1,15 @@
 #ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 
+#ifdef TESTING
+# include "testing.h"
+#else
+# include <Timezone.h>
+#endif
+
 #include <memory>
 #include <stdint.h>
 #include <string>
-
-#include "ntp.h"
 
 
 namespace Drivhus {
@@ -17,9 +21,11 @@ namespace Drivhus {
 #define degToRad(angleInDegrees) ((angleInDegrees) * PI / 180.0)
 #define radToDeg(angleInRadians) ((angleInRadians) * 180.0 / PI)
 
-#define ON (true)
-#define OFF (false)
+static constexpr bool ON = true;
+static constexpr bool OFF = false;
 
+
+static constexpr uint8_t MAX_PLANT_COUNT = 15;
 
 static constexpr uint8_t O_CD74HC4067_COMMON_PIN = 32;
 static constexpr uint8_t O_CD74HC4067_S0_PIN   = 26;
@@ -40,7 +46,26 @@ static constexpr uint8_t O_WATER_VALVE_PIN     = 22;
 static constexpr uint8_t I_WATERLEVEL_LOW_PIN  = 36;
 static constexpr uint8_t I_WATERLEVEL_HIGH_PIN = 39;
 
+struct Plant {
+  bool enabled;
+  bool watering_requested;
+  float current_value;
+  float wet_value;
+  float dry_value;
+  unsigned long watering_duration_ms;
+  unsigned long watering_grace_period_ms;
+public:
+  Plant();
+  Plant& operator=(const Plant& other);
+};
+
 //A small selection of time zones
+struct TimezoneInfo {
+  const char code[3+1];
+  const char description[25+1];
+  const TimeChangeRule regular;
+  const TimeChangeRule dst;
+};
 constexpr TimezoneInfo g_timezones[] = {{"CET", "Central European Time", {"", Last, Sun, Oct, 3, 1*60}, {"", Last, Sun, Mar, 2, 2*60}},
                                         {"BST", "United Kingdom", {"", Last, Sun, Oct, 2, 0*60}, {"", Last, Sun, Mar, 1, 1*60}},
                                         {"EST", "US Eastern Time", {"", First, Sun, Nov, 2, -5*60}, {"", Second, Sun, Mar, 2, -4*60}},
@@ -65,8 +90,14 @@ class Growlight;
 class KY018; //Light sensor
 [[nodiscard]] std::shared_ptr<KY018> getKY018();
 
+class Log;
+[[nodiscard]] std::shared_ptr<Log> getLog();
+
 class RS485; //Soil sensors bus
 [[nodiscard]] std::shared_ptr<RS485> getRS485();
+
+class MQTT;
+[[nodiscard]] std::shared_ptr<MQTT> getMQTT();
 
 class Network;
 [[nodiscard]] std::shared_ptr<Network> getNetwork();
@@ -81,6 +112,7 @@ class Waterlevel; //Waterlevel sensors
 [[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel();
 
 
+[[nodiscard]] static constexpr bool isValidPlantId(uint8_t plant_id) {return plant_id>=1 && plant_id<=Drivhus::MAX_PLANT_COUNT;}
 [[nodiscard]] const TimezoneInfo* getTimezoneInfo(const std::string& timezone);
 [[nodiscard]] std::string floatToString(const float& value, uint8_t precision);
 [[nodiscard]] std::string uint8ToHex(uint8_t value);

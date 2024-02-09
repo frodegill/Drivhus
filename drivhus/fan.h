@@ -8,7 +8,7 @@
 
 namespace Drivhus {
 
-class Fan : public OnChangeListener
+class Fan : public OnValueChangeListener
 {
 private:
   static constexpr unsigned long ON_OFF_INTERVAL_MS = 15000L;

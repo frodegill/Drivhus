@@ -7,21 +7,22 @@
 #endif
 
 #include "global.h"
+#include "ntp.h"
 
 
 Drivhus::Growlight::Growlight(uint8_t pin)
-: Drivhus::OnChangeListener(),
+: Drivhus::OnValueChangeListener(),
   m_pin(pin),
   m_sunrise(0.0f),
   m_sunset(0.0f),
   m_activated(false)
 {
-  Drivhus::getSettings()->addChangeListener(this);
+  Drivhus::getSettings()->addValueChangeListener(this);
 }
 
 bool Drivhus::Growlight::init() {
   pinMode(m_pin, OUTPUT);
-  toggle(OFF);
+  toggle(Drivhus::OFF);
   return true;
 }
 

@@ -11,6 +11,8 @@
 #include "fan.h"
 #include "growlight.h"
 #include "ky018.h"
+#include "log.h"
+#include "mqtt.h"
 #include "network.h"
 #include "ntp.h"
 #include "rs485.h"
@@ -26,7 +28,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Starting Drivhus");
 
-  if (!Drivhus::getSettings()->init() ||
+  if (!Drivhus::getLog()->init() ||
+      !Drivhus::getSettings()->init() ||
       !Drivhus::getCD74HC4067()->init() ||
       !Drivhus::getIndoorDHT22()->init() ||
       !Drivhus::getOutdoorDHT22()->init() ||
@@ -37,7 +40,8 @@ void setup() {
       !Drivhus::getNetwork()->init() ||
       !Drivhus::getNTP()->init() ||
       !Drivhus::getRS485()->init() ||
-      !Drivhus::getWaterlevel()->init()) {
+      !Drivhus::getWaterlevel()->init() ||
+      !Drivhus::getMQTT()->init()) {
     Serial.println("Setup failed");
   }
 
@@ -48,6 +52,7 @@ void setup() {
 }
 
 void loop() {
+  Drivhus::getLog()->loop();
   Drivhus::getSettings()->loop();
   Drivhus::getCD74HC4067()->loop();
   Drivhus::getIndoorDHT22()->loop();
@@ -60,6 +65,7 @@ void loop() {
   Drivhus::getNTP()->loop();
   Drivhus::getRS485()->loop();
   Drivhus::getWaterlevel()->loop();
+  Drivhus::getMQTT()->loop();
 
   delay(200);
 }

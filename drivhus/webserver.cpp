@@ -130,7 +130,7 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
 
 
 Drivhus::WebServer::WebServer()
-: Drivhus::OnChangeListener(),
+: Drivhus::OnValueChangeListener(),
   m_is_showing_setup(false),
   m_warning_message_time(0L),
   m_is_testing_relays(false),
@@ -138,7 +138,7 @@ Drivhus::WebServer::WebServer()
   m_relay_test_index(0),
   m_relay_test_on(false)
 {
-  Drivhus::getSettings()->addChangeListener(this);
+  Drivhus::getSettings()->addValueChangeListener(this);
   m_temp[0] = Drivhus::getSettings()->getIndoorTemp();
   m_humid[0] = Drivhus::getSettings()->getIndoorHumidity();
   m_temp[1] = Drivhus::getSettings()->getOutdoorTemp();

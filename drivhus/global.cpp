@@ -13,6 +13,8 @@
 #include "fan.h"
 #include "growlight.h"
 #include "ky018.h"
+#include "log.h"
+#include "mqtt.h"
 #include "network.h"
 #include "ntp.h"
 #include "rs485.h"
@@ -20,6 +22,27 @@
 #include "volt.h"
 #include "waterlevel.h"
 
+
+Drivhus::Plant::Plant()
+: enabled(false),
+  watering_requested(false),
+  wet_value(0.0f),
+  dry_value(0.0f),
+  watering_duration_ms(0L),
+  watering_grace_period_ms(0L) {
+}
+
+Drivhus::Plant& Drivhus::Plant::operator=(const Plant& other) {
+  if (this == &other)
+      return *this;
+      
+  enabled = other.enabled;
+  watering_requested = other.watering_requested;
+  wet_value = other.wet_value;
+  dry_value = other.dry_value;
+  watering_duration_ms = other.watering_duration_ms;
+  watering_grace_period_ms = other.watering_grace_period_ms;
+}
 
 std::shared_ptr<Drivhus::CD74HC4067> g_cd74hc4067;
 [[nodiscard]] std::shared_ptr<Drivhus::CD74HC4067> Drivhus::getCD74HC4067() {
@@ -67,6 +90,22 @@ std::shared_ptr<Drivhus::KY018> g_ky018;
     g_ky018 = std::make_shared<Drivhus::KY018>(I_KY018_PIN);
   }
   return g_ky018;
+}
+
+std::shared_ptr<Drivhus::Log> g_log;
+[[nodiscard]] std::shared_ptr<Drivhus::Log> Drivhus::getLog() {
+  if (!g_log) {
+    g_log = std::make_shared<Drivhus::Log>(Drivhus::Log::LogLevel::LEVEL_ERROR, Drivhus::Log::LogMode::MODE_SERIAL);
+  }
+  return g_log;
+}
+
+std::shared_ptr<Drivhus::MQTT> g_mqtt;
+[[nodiscard]] std::shared_ptr<Drivhus::MQTT> Drivhus::getMQTT() {
+  if (!g_mqtt) {
+    g_mqtt = std::make_shared<Drivhus::MQTT>();
+  }
+  return g_mqtt;
 }
 
 std::shared_ptr<Drivhus::Network> g_network;

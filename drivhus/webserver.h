@@ -17,7 +17,7 @@
 
 namespace Drivhus {
 
-class WebServer : public OnChangeListener
+class WebServer : public OnValueChangeListener
 {
 public:
   static constexpr unsigned long WARNING_MESSAG_DELAY_MS = 5000L;

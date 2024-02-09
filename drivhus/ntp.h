@@ -6,19 +6,14 @@
 #else
 # include <Arduino.h>
 # include <WiFiUdp.h>
-# include <Timezone.h>
 #endif
 
 #include <memory>
 
-namespace Drivhus {
+#include "global.h"
 
-struct TimezoneInfo {
-  const char code[3+1];
-  const char description[25+1];
-  const TimeChangeRule regular;
-  const TimeChangeRule dst;
-};
+
+namespace Drivhus {
 
 class NTP
 {

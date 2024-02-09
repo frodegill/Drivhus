@@ -10,12 +10,15 @@
 
 Drivhus::Settings::Settings(uint8_t pin)
 : m_pin(pin),
-  m_mqtt_serverport_param(Mqtt::MQTT_DEFAULT_PORT),
+  m_mqtt_serverport_param(Drivhus::MQTT::MQTT_DEFAULT_PORT),
   m_volt_multiplier_param(1.0f),
   m_settings_changed(false),
   m_previous_setup_pin_poll_time(0L),
   m_in_setup_mode(false),
   m_should_flush_settings(false),
+  m_ms_between_reading(0L),
+  m_fan_activate_temp_value(0.0f),
+  m_fan_activate_humid_value(0.0f),
   m_indoor_temp(0.0f),
   m_indoor_humidity(0.0f),
   m_outdoor_temp(0.0f),
@@ -64,21 +67,42 @@ bool Drivhus::Settings::isInSetupMode(bool force_read) {
   return m_in_setup_mode;
 }
 
-void Drivhus::Settings::addChangeListener(Drivhus::OnChangeListener* listener) {
-  m_change_listeners.push_back(listener);
+void Drivhus::Settings::addValueChangeListener(Drivhus::OnValueChangeListener* listener) {
+  m_value_change_listeners.push_back(listener);
 }
 
-void Drivhus::Settings::notifyFloatChangeListeners(Drivhus::OnChangeListener::FloatType type, float value) {
-  for (auto listener : m_change_listeners) {
+void Drivhus::Settings::addConfigChangeListener(Drivhus::OnConfigChangeListener* listener) {
+  m_config_change_listeners.push_back(listener);
+}
+
+void Drivhus::Settings::notifyValueChangeListeners(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
+  for (auto listener : m_value_change_listeners) {
     switch(type) {
-      case Drivhus::OnChangeListener::FloatType::INDOOR_TEMP: listener->onIndoorTempChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::INDOOR_HUMIDITY: listener->onIndoorHumidityChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::OUTDOOR_TEMP: listener->onOutdoorTempChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::OUTDOOR_HUMIDITY: listener->onOutdoorHumidityChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::LIGHT: listener->onLightChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::VOLT: listener->onVoltChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::SUNRISE: listener->onSunriseChanged(value); break;
-      case Drivhus::OnChangeListener::FloatType::SUNSET: listener->onSunsetChanged(value); break;
+      case Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE: listener->onPlantMoistureChanged(plant_id, getPlantMoisture(plant_id)); break;
+      case Drivhus::OnValueChangeListener::Type::INDOOR_TEMP: listener->onIndoorTempChanged(getIndoorTemp()); break;
+      case Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY: listener->onIndoorHumidityChanged(getIndoorHumidity()); break;
+      case Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP: listener->onOutdoorTempChanged(getOutdoorTemp()); break;
+      case Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY: listener->onOutdoorHumidityChanged(getOutdoorHumidity()); break;
+      case Drivhus::OnValueChangeListener::Type::LIGHT: listener->onLightChanged(getLight()); break;
+      case Drivhus::OnValueChangeListener::Type::VOLT: listener->onVoltChanged(getVolt()); break;
+      case Drivhus::OnValueChangeListener::Type::SUNRISE: listener->onSunriseChanged(getSunrise()); break;
+      case Drivhus::OnValueChangeListener::Type::SUNSET: listener->onSunsetChanged(getSunset()); break;
+    };
+  }
+}
+
+void Drivhus::Settings::notifyConfigChangeListeners(Drivhus::OnConfigChangeListener::Type type, uint8_t plant_id) {
+  for (auto listener : m_config_change_listeners) {
+    switch(type) {
+      case Drivhus::OnConfigChangeListener::Type::MS_BETWEEN_READING: listener->onMsBetweenReadingChanged(getMsBetweenReading()); break;
+      case Drivhus::OnConfigChangeListener::Type::FAN_ACTIVATE_TEMP: listener->onFanActivateTempChanged(getFanActivateTemp()); break;
+      case Drivhus::OnConfigChangeListener::Type::FAN_ACTIVATE_HUMIDITY: listener->onFanActivateHumidityChanged(getFanActivateHumidity()); break;
+      case Drivhus::OnConfigChangeListener::Type::PLANT_REQUEST_WATERING: listener->onPlantRequestWateringChanged(plant_id); break;
+      case Drivhus::OnConfigChangeListener::Type::PLANT_ENABLED: listener->onPlantEnabledChanged(plant_id, getEnabled(plant_id)); break;
+      case Drivhus::OnConfigChangeListener::Type::PLANT_WET_VALUE: listener->onPlantWetValueChanged(plant_id, getWetValue(plant_id)); break;
+      case Drivhus::OnConfigChangeListener::Type::PLANT_DRY_VALUE: listener->onPlantDryValueChanged(plant_id, getDryValue(plant_id)); break;
+      case Drivhus::OnConfigChangeListener::Type::PLANT_WATERING_DURATION: listener->onPlantWateringDurationMsChanged(plant_id, getWateringDuration(plant_id)); break;
+      case Drivhus::OnConfigChangeListener::Type::PLANT_WATERING_GRACE_VALUE: listener->onPlantWateringGraceValueMsChanged(plant_id, getWateringGracePeriod(plant_id)); break;
     };
   }
 }
@@ -114,7 +138,7 @@ void Drivhus::Settings::readPersistentParams() {
     m_ssid_param[0] = 0;
     m_ssid_password_param[0] = 0;
     m_mqtt_servername_param[0] = 0;
-    m_mqtt_serverport_param = Mqtt::MQTT_DEFAULT_PORT;
+    m_mqtt_serverport_param = Drivhus::MQTT::MQTT_DEFAULT_PORT;
     m_mqtt_serverid_param = DEFAULT_SERVERID;
     m_mqtt_username_param[0] = 0;
     m_mqtt_password_param[0] = 0;
