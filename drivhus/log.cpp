@@ -10,7 +10,8 @@
 
 
 Drivhus::Log::Log(LogLevel log_level, LogMode log_mode)
-: Drivhus::Component() {
+: Drivhus::Component(),
+  m_log_level(LogLevel::LEVEL_NONE) {
   setLogLevel(log_level);
   setLogMode(log_mode);
 }
@@ -28,7 +29,7 @@ void Drivhus::Log::setLogLevel(LogLevel log_level)
     Serial.flush();
     Serial.end();
   } else if (m_log_level==LogLevel::LEVEL_NONE && log_level!=LogLevel::LEVEL_NONE) {
-    Serial.begin(9600);
+    Serial.begin(115200);
   }
 
   m_log_level = log_level;
