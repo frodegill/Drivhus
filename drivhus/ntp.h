@@ -30,6 +30,7 @@ public:
   NTP(Timezone&& timezone);
   virtual [[nodiscard]] bool init() override;
   virtual void loop() override;
+  virtual std::string&& getName() {return "NTP";}
 
 public:
   [[nodiscard]] bool getLocalTime(time_t& local_time);

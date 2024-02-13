@@ -17,6 +17,7 @@ public:
   KY018(uint8_t pin);
   virtual [[nodiscard]] bool init() override;
   virtual void loop() override;
+  virtual std::string&& getName() {return "KY018";}
 
 private:
   uint8_t m_pin;

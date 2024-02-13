@@ -25,6 +25,7 @@ public:
   MQTT();
   virtual [[nodiscard]] bool init() override;
   virtual void loop() override;
+  virtual std::string&& getName() {return "MQTT";}
 
 protected:
   virtual void onPlantMoistureChanged(uint8_t plant_id, float) {registerChange(Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE, 15*1000, plant_id);}

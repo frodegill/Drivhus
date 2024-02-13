@@ -155,7 +155,7 @@ void Drivhus::NTP::sendNTPpacket() {
   while (m_udp.parsePacket() > 0) ; // discard any previously received packets
 
   std::memset(m_packet_buffer, 0, NTP_PACKET_SIZE);
-  // Initialize values needed to form NTP request
+  // Initialise values needed to form NTP request
   // (see URL above for details on the packets)
   m_packet_buffer[0] = 0xE3;  // LI, Version, Mode
   m_packet_buffer[1] = 0;     // Stratum, or type of clock

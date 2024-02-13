@@ -18,6 +18,7 @@ public:
   Fan(uint8_t pin);
   virtual [[nodiscard]] bool init() override;
   virtual void loop() override;
+  virtual std::string&& getName() {return "Fan";}
 
 protected:
   void onIndoorTempChanged(float value) override {m_temp=value;}

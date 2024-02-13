@@ -45,6 +45,7 @@ void setup() {
   g_components.push_back(Drivhus::getWaterlevel());
   g_components.push_back(Drivhus::getMQTT());
 
+  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, "Initialising components");
   for (auto component : g_components) {
     if (!component->init()) {
       Serial.println("Setup failed");

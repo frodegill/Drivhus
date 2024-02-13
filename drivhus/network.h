@@ -27,6 +27,7 @@ public:
   Network();
   virtual [[nodiscard]] bool init() override;
   virtual void loop() override;
+  virtual std::string&& getName() {return "Network";}
 
   [[nodiscard]] bool isWiFiConnected();
   [[nodiscard]] std::shared_ptr<WebServer> getWebServer() const {return m_webserver;}

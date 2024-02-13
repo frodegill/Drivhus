@@ -17,6 +17,7 @@ public:
   CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin);
   virtual [[nodiscard]] bool init() override;
   virtual void loop() override;
+  virtual std::string&& getName() {return "CD74HC4067";}
 
   void activate(uint8_t address, unsigned long duration);
   [[nodiscard]] bool isActive() const {return m_activate_time!=0L;}
