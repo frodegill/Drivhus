@@ -551,10 +551,11 @@ void Drivhus::WebServer::updateRelayTest() {
 
 bool Drivhus::WebServer::activateTestRelay(bool turn_on) {
   if (m_relay_test_index < 15) {
-    if (!Drivhus::getCD74HC4067()->isActive()) {
+    if (!Drivhus::getCD74HC4067()->isBusy()) {
       if (turn_on) {
-        addWarningMessage(std::string("Testing WaterPump ")+std::to_string(m_relay_test_index+1));
-        Drivhus::getCD74HC4067()->activate(m_relay_test_index+1, RELAY_TEST_ON_MS);
+        uint8_t plant_id = m_relay_test_index+1;
+        addWarningMessage(std::string("Testing WaterPump ")+std::to_string(plant_id));
+        Drivhus::getSettings()->setRequestWatering(plant_id);
         return true;
       } else {
         return true; //Relay turns itself off.

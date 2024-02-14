@@ -8,9 +8,9 @@ namespace Drivhus {
 
 class Component {
 public:
-  virtual [[nodiscard]] bool init() = 0;
+  [[nodiscard]] virtual bool init() = 0;
   virtual void loop() = 0;
-  virtual std::string&& getName() = 0;
+  virtual const char* getName() const = 0;
 };
 
 } //namespace

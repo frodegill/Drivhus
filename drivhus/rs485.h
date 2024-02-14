@@ -40,9 +40,9 @@ private:
 
 public:
   RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin);
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "RS485";}
+  virtual const char* getName() const override {return "RS485";}
 
   [[nodiscard]] bool isSensorPresent(uint8_t id) const;
   [[nodiscard]] std::set<uint8_t> getPresentSensors() const;

@@ -69,12 +69,12 @@ void Drivhus::MQTT::registerChange(Drivhus::OnValueChangeListener::Type type, un
   }
 }
 
-void Drivhus::MQTT::globalMQTTCallback(char* topic, byte* payload, unsigned int length)
+void Drivhus::MQTT::globalMQTTCallback(char* topic, uint8_t* payload, unsigned int length)
 {
   Drivhus::getMQTT()->callback(topic, payload, length);  
 }
 
-void Drivhus::MQTT::callback(char* topic, byte* payload, unsigned int length)
+void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
 {
   auto server_id = Drivhus::getSettings()->getMQTTServerId();
   if (0 != strncmp(server_id.c_str(), topic, server_id.length())) {

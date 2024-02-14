@@ -16,9 +16,9 @@ class DHT22 : public Component
 {
 public:
   DHT22(uint8_t id, uint8_t pin);
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "DHT22";}
+  virtual const char* getName() const override {return "DHT22";}
 
   [[nodiscard]] bool isPresent() const {return m_is_present;}
 

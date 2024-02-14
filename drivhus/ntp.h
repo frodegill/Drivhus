@@ -28,9 +28,9 @@ private:
 
 public:
   NTP(Timezone&& timezone);
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "NTP";}
+  virtual const char* getName() const override {return "NTP";}
 
 public:
   [[nodiscard]] bool getLocalTime(time_t& local_time);

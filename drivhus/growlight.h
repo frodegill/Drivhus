@@ -13,9 +13,9 @@ class Growlight : public Component, public OnValueChangeListener
 {
 public:
   Growlight(uint8_t pin);
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "GROWLIGHT";}
+  virtual const char* getName() const override {return "GROWLIGHT";}
 
 protected:
   virtual void onSunriseChanged(float value) override {m_sunrise = value;}

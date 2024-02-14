@@ -25,9 +25,9 @@ public:
 
 public:
   Network();
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "Network";}
+  virtual const char* getName() const override {return "Network";}
 
   [[nodiscard]] bool isWiFiConnected();
   [[nodiscard]] std::shared_ptr<WebServer> getWebServer() const {return m_webserver;}

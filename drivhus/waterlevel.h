@@ -16,9 +16,9 @@ class Waterlevel : public Component
 {
 public:
   Waterlevel(uint8_t low_pin, uint8_t high_pin, uint8_t valve_pin);
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "Waterlevel";}
+  virtual const char* getName() const override {return "Waterlevel";}
 
 private:
   uint8_t m_low_pin;

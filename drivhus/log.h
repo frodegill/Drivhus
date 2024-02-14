@@ -37,9 +37,9 @@ public:
 
 public:
   Log(LogLevel log_level, LogMode log_mode);
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "Log";}
+  virtual const char* getName() const override {return "Log";}
 
   void setLogLevel(LogLevel log_level);
   void setLogMode(LogMode log_mode);

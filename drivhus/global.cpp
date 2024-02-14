@@ -23,27 +23,6 @@
 #include "waterlevel.h"
 
 
-Drivhus::Plant::Plant()
-: enabled(false),
-  watering_requested(false),
-  wet_value(0.0f),
-  dry_value(0.0f),
-  watering_duration_ms(0L),
-  watering_grace_period_ms(0L) {
-}
-
-Drivhus::Plant& Drivhus::Plant::operator=(const Plant& other) {
-  if (this == &other)
-      return *this;
-      
-  enabled = other.enabled;
-  watering_requested = other.watering_requested;
-  wet_value = other.wet_value;
-  dry_value = other.dry_value;
-  watering_duration_ms = other.watering_duration_ms;
-  watering_grace_period_ms = other.watering_grace_period_ms;
-}
-
 std::shared_ptr<Drivhus::CD74HC4067> g_cd74hc4067;
 [[nodiscard]] std::shared_ptr<Drivhus::CD74HC4067> Drivhus::getCD74HC4067() {
   if (!g_cd74hc4067) {

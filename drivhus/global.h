@@ -46,19 +46,6 @@ static constexpr uint8_t O_WATER_VALVE_PIN     = 22;
 static constexpr uint8_t I_WATERLEVEL_LOW_PIN  = 36;
 static constexpr uint8_t I_WATERLEVEL_HIGH_PIN = 39;
 
-struct Plant {
-  bool enabled;
-  bool watering_requested;
-  float current_value;
-  float wet_value;
-  float dry_value;
-  unsigned long watering_duration_ms;
-  unsigned long watering_grace_period_ms;
-public:
-  Plant();
-  Plant& operator=(const Plant& other);
-};
-
 //A small selection of time zones
 struct TimezoneInfo {
   const char code[3+1];
@@ -112,7 +99,6 @@ class Waterlevel; //Waterlevel sensors
 [[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel();
 
 
-[[nodiscard]] static constexpr bool isValidPlantId(uint8_t plant_id) {return plant_id>=1 && plant_id<=Drivhus::MAX_PLANT_COUNT;}
 [[nodiscard]] const TimezoneInfo* getTimezoneInfo(const std::string& timezone);
 [[nodiscard]] std::string floatToString(const float& value, uint8_t precision);
 [[nodiscard]] std::string uint8ToHex(uint8_t value);

@@ -23,9 +23,9 @@ public:
 
 public:
   MQTT();
-  virtual [[nodiscard]] bool init() override;
+  [[nodiscard]] virtual bool init() override;
   virtual void loop() override;
-  virtual std::string&& getName() {return "MQTT";}
+  virtual const char* getName() const override {return "MQTT";}
 
 protected:
   virtual void onPlantMoistureChanged(uint8_t plant_id, float) {registerChange(Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE, 15*1000, plant_id);}
@@ -41,8 +41,8 @@ private:
   void registerChange(Drivhus::OnValueChangeListener::Type type, unsigned long max_cache_time, uint8_t plant_id=0);
 
 public:
-  static void globalMQTTCallback(char* topic, byte* payload, unsigned int length);
-  void callback(char* topic, byte* payload, unsigned int length);
+  static void globalMQTTCallback(char* topic, uint8_t* payload, unsigned int length);
+  void callback(char* topic, uint8_t* payload, unsigned int length);
 
   void requestMQTTConnection();
   [[nodiscard]] bool isMQTTConnectionRequested() const {return m_reconnect_time!=0L;}
