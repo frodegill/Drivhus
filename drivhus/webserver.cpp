@@ -236,7 +236,7 @@ void Drivhus::WebServer::setSensorScanCompleted() {
   notifyClients("CSI", "-");
 }
 
-void Drivhus::WebServer::onValueChanged(Type type, uint8_t plant_id) {
+void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
   switch(type) {
     case INDOOR_TEMP: {
       float value = Drivhus::getSettings()->getIndoorTemp();

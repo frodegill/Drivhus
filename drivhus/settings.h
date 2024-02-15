@@ -34,7 +34,7 @@ public:
     SUNSET=Drivhus::MAX_PLANT_COUNT+7
   };
 
-  virtual void onValueChanged(Type /*type*/, uint8_t /*plant_id*/) {}
+  virtual void onValueChanged(OnValueChangeListener::Type /*type*/, uint8_t /*plant_id*/) {}
 };
 
 class OnConfigChangeListener {
@@ -54,7 +54,7 @@ public:
     PLANT_WATERING_ENDED
   };
 
-  virtual void onConfigChanged(Type /*type*/, uint8_t /*plant_id*/) {}
+  virtual void onConfigChanged(OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id*/) {}
 };
 
 class Settings : public Component

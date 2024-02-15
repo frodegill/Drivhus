@@ -9,7 +9,7 @@
 
 namespace Drivhus {
 
-class Fan : public Component, public OnValueChangeListener
+class Fan : public Component, public OnValueChangeListener, public OnConfigChangeListener
 {
 private:
   static constexpr unsigned long ON_OFF_INTERVAL_MS = 15000L;
@@ -23,7 +23,8 @@ public:
   virtual const char* getName() const override {return "Fan";}
 
 protected:
-  virtual void onValueChanged(Type type, uint8_t /*plant_id*/) override;
+  virtual void onValueChanged(OnValueChangeListener::Type type, uint8_t /*plant_id*/) override;
+  virtual void onConfigChanged(OnConfigChangeListener::Type type, uint8_t /*plant_id*/) override;
 
 private:
   void toggle(bool on);
@@ -32,6 +33,10 @@ private:
 private:
   uint8_t m_pin;
   unsigned long m_previous_event_time;
+
+  float m_fan_activate_temp_value;
+  float m_fan_activate_humid_value;
+
   float m_indoor_temp;
   float m_indoor_humidity;
   float m_outdoor_temp;

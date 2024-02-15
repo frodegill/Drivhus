@@ -18,7 +18,7 @@ public:
   virtual const char* getName() const override {return "GROWLIGHT";}
 
 protected:
-  virtual void onValueChanged(Type type, uint8_t /*plant_id*/) override;
+  virtual void onValueChanged(OnValueChangeListener::Type type, uint8_t /*plant_id*/) override;
 
 private:
   void toggle(bool on);

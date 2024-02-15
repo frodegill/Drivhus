@@ -47,7 +47,7 @@ void Drivhus::Growlight::loop() {
   }
 }
 
-void Drivhus::Growlight::onValueChanged(Type type, uint8_t /*plant_id*/) {
+void Drivhus::Growlight::onValueChanged(Drivhus::OnValueChangeListener::Type type, uint8_t /*plant_id*/) {
   switch(type) {
     case SUNRISE:
       m_sunrise = Drivhus::getSettings()->getSunrise();

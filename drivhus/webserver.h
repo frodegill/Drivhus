@@ -32,7 +32,7 @@ public:
   static void onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 
 protected:
-  virtual void onValueChanged(Type type, uint8_t plant_id) override;
+  virtual void onValueChanged(OnValueChangeListener::Type type, uint8_t plant_id) override;
 
 public:
   void updateSetupMode();

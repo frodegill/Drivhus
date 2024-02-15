@@ -16,6 +16,8 @@ Drivhus::Fan::Fan(uint8_t pin)
   Drivhus::OnValueChangeListener(),
   m_pin(pin),
   m_previous_event_time(0L),
+  m_fan_activate_temp_value(0.0f),
+  m_fan_activate_humid_value(0.0f),
   m_indoor_temp(0.0f),
   m_indoor_humidity(0.0f),
   m_outdoor_temp(0.0f),
@@ -23,10 +25,16 @@ Drivhus::Fan::Fan(uint8_t pin)
   m_activated(false)
 {
   Drivhus::getSettings()->addValueChangeListener(this);
+  Drivhus::getSettings()->addConfigChangeListener(this);
 }
  
 bool Drivhus::Fan::init() {
   pinMode(m_pin, OUTPUT);
+
+  m_fan_activate_temp_value = Drivhus::getSettings()->getFanActivateTemp();
+  m_fan_activate_humid_value = Drivhus::getSettings()->getFanActivateHumidity();
+  calculateOutdoorHumidityIndoor();
+
   toggle(Drivhus::OFF);
   return true;
 }
@@ -38,9 +46,9 @@ void Drivhus::Fan::loop() {
   }
 
   if ((m_previous_event_time+ON_OFF_INTERVAL_MS)<current_time) {
-    bool temp_above_treshold = m_indoor_temp > Drivhus::getSettings()->getFanActivateTemp() && //Can we get cooler air into the greenhouse?
+    bool temp_above_treshold = m_indoor_temp > m_fan_activate_temp_value && //Can we get cooler air into the greenhouse?
                                (m_indoor_temp-TEMP_DIFF_TRESHOLD) > m_outdoor_temp;
-    bool humidity_above_treshold = m_indoor_humidity > Drivhus::getSettings()->getFanActivateHumidity() && //Can we get dryer air into the greenhouse?
+    bool humidity_above_treshold = m_indoor_humidity > m_fan_activate_humid_value && //Can we get dryer air into the greenhouse?
                                    (m_indoor_humidity-HUMIDITY_DIFF_TRESHOLD) > m_outdoor_humidity_indoor;
     
     if (m_activated && !temp_above_treshold && !humidity_above_treshold) {
@@ -51,7 +59,7 @@ void Drivhus::Fan::loop() {
   }
 }
 
-void Drivhus::Fan::onValueChanged(Type type, uint8_t /*plant_id*/) {
+void Drivhus::Fan::onValueChanged(Drivhus::OnValueChangeListener::Type type, uint8_t /*plant_id*/) {
   if (type==INDOOR_TEMP || type==INDOOR_HUMIDITY || type==OUTDOOR_TEMP || type==OUTDOOR_HUMIDITY) {
     switch(type) {
       case INDOOR_TEMP:
@@ -67,6 +75,18 @@ void Drivhus::Fan::onValueChanged(Type type, uint8_t /*plant_id*/) {
     }; 
     calculateOutdoorHumidityIndoor();
   }
+}
+
+void Drivhus::Fan::onConfigChanged(Drivhus::OnConfigChangeListener::Type type, uint8_t /*plant_id*/) {
+  switch(type) {
+    case FAN_ACTIVATE_TEMP:
+      m_fan_activate_temp_value = Drivhus::getSettings()->getFanActivateTemp();
+      break;
+    case FAN_ACTIVATE_HUMIDITY:
+      m_fan_activate_humid_value = Drivhus::getSettings()->getFanActivateHumidity();
+      break;
+    default: break;
+  };
 }
 
 void Drivhus::Fan::toggle(bool on) {
