@@ -34,15 +34,7 @@ public:
     SUNSET=Drivhus::MAX_PLANT_COUNT+7
   };
 
-  virtual void onPlantMoistureChanged(uint8_t /*plant_id*/, float /*value*/) {}
-  virtual void onIndoorTempChanged(float /*value*/) {}
-  virtual void onIndoorHumidityChanged(float /*value*/) {}
-  virtual void onOutdoorTempChanged(float /*value*/) {}
-  virtual void onOutdoorHumidityChanged(float /*value*/) {}
-  virtual void onLightChanged(float /*value*/) {}
-  virtual void onVoltChanged(float /*value*/) {}
-  virtual void onSunriseChanged(float /*value*/) {}
-  virtual void onSunsetChanged(float /*value*/) {}
+  virtual void onValueChanged(Type /*type*/, uint8_t /*plant_id*/) {}
 };
 
 class OnConfigChangeListener {
@@ -62,18 +54,7 @@ public:
     PLANT_WATERING_ENDED
   };
 
-  virtual void onMsBetweenReadingChanged(unsigned long /*value*/) {}
-  virtual void onFanActivateTempChanged(float /*value*/) {}
-  virtual void onFanActivateHumidityChanged(float /*value*/) {}
-  virtual void onPlantRequestWateringChanged(uint8_t /*plant_id*/) {}
-  virtual void onPlantWateringCycleChanged(uint8_t /*plant_id*/, bool /*value*/) {}
-  virtual void onPlantEnabledChanged(uint8_t /*plant_id*/, bool /*value*/) {}
-  virtual void onPlantDryValueChanged(uint8_t /*plant_id*/, float /*value*/) {}
-  virtual void onPlantWetValueChanged(uint8_t /*plant_id*/, float /*value*/) {}
-  virtual void onPlantWateringDurationMsChanged(uint8_t /*plant_id*/, unsigned long /*value*/) {}
-  virtual void onPlantWateringGraceValueMsChanged(uint8_t /*plant_id*/, unsigned long /*value*/) {}
-  virtual void onPlantWateringStarted(uint8_t /*plant_id*/) {}
-  virtual void onPlantWateringEnded(uint8_t /*plant_id*/) {}
+  virtual void onConfigChanged(Type /*type*/, uint8_t /*plant_id*/) {}
 };
 
 class Settings : public Component

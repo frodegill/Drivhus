@@ -47,6 +47,18 @@ void Drivhus::Growlight::loop() {
   }
 }
 
+void Drivhus::Growlight::onValueChanged(Type type, uint8_t /*plant_id*/) {
+  switch(type) {
+    case SUNRISE:
+      m_sunrise = Drivhus::getSettings()->getSunrise();
+      break;
+    case SUNSET:
+      m_sunset = Drivhus::getSettings()->getSunset();
+      break;
+    default: break;
+  };
+}
+
 void Drivhus::Growlight::toggle(bool on) {
   m_activated = on;
   digitalWrite(m_pin, on ? HIGH : LOW);

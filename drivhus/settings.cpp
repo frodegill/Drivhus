@@ -77,36 +77,13 @@ void Drivhus::Settings::addConfigChangeListener(Drivhus::OnConfigChangeListener*
 
 void Drivhus::Settings::notifyValueChangeListeners(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
   for (auto listener : m_value_change_listeners) {
-    switch(type) {
-      case Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE: listener->onPlantMoistureChanged(plant_id, getPlantMoisture(plant_id)); break;
-      case Drivhus::OnValueChangeListener::Type::INDOOR_TEMP: listener->onIndoorTempChanged(getIndoorTemp()); break;
-      case Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY: listener->onIndoorHumidityChanged(getIndoorHumidity()); break;
-      case Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP: listener->onOutdoorTempChanged(getOutdoorTemp()); break;
-      case Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY: listener->onOutdoorHumidityChanged(getOutdoorHumidity()); break;
-      case Drivhus::OnValueChangeListener::Type::LIGHT: listener->onLightChanged(getLight()); break;
-      case Drivhus::OnValueChangeListener::Type::VOLT: listener->onVoltChanged(getVolt()); break;
-      case Drivhus::OnValueChangeListener::Type::SUNRISE: listener->onSunriseChanged(getSunrise()); break;
-      case Drivhus::OnValueChangeListener::Type::SUNSET: listener->onSunsetChanged(getSunset()); break;
-    };
+    listener->onValueChanged(type, plant_id);
   }
 }
 
 void Drivhus::Settings::notifyConfigChangeListeners(Drivhus::OnConfigChangeListener::Type type, uint8_t plant_id) {
   for (auto listener : m_config_change_listeners) {
-    switch(type) {
-      case Drivhus::OnConfigChangeListener::Type::MS_BETWEEN_READING: listener->onMsBetweenReadingChanged(getMsBetweenReading()); break;
-      case Drivhus::OnConfigChangeListener::Type::FAN_ACTIVATE_TEMP: listener->onFanActivateTempChanged(getFanActivateTemp()); break;
-      case Drivhus::OnConfigChangeListener::Type::FAN_ACTIVATE_HUMIDITY: listener->onFanActivateHumidityChanged(getFanActivateHumidity()); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_REQUEST_WATERING: listener->onPlantRequestWateringChanged(plant_id); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_IN_WATERING_CYCLE: listener->onPlantWateringCycleChanged(plant_id, getIsInWateringCycle(plant_id)); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_ENABLED: listener->onPlantEnabledChanged(plant_id, getEnabled(plant_id)); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_WET_VALUE: listener->onPlantWetValueChanged(plant_id, getWetValue(plant_id)); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_DRY_VALUE: listener->onPlantDryValueChanged(plant_id, getDryValue(plant_id)); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_WATERING_DURATION: listener->onPlantWateringDurationMsChanged(plant_id, getWateringDuration(plant_id)); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_WATERING_GRACE_VALUE: listener->onPlantWateringGraceValueMsChanged(plant_id, getWateringGracePeriod(plant_id)); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_WATERING_STARTED: listener->onPlantWateringStarted(plant_id); break;
-      case Drivhus::OnConfigChangeListener::Type::PLANT_WATERING_ENDED: listener->onPlantWateringEnded(plant_id); break;
-    };
+    listener->onConfigChanged(type, plant_id);
   }
 }
 

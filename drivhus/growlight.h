@@ -18,8 +18,7 @@ public:
   virtual const char* getName() const override {return "GROWLIGHT";}
 
 protected:
-  virtual void onSunriseChanged(float value) override {m_sunrise = value;}
-  virtual void onSunsetChanged(float value) override {m_sunset = value;}
+  virtual void onValueChanged(Type type, uint8_t /*plant_id*/) override;
 
 private:
   void toggle(bool on);

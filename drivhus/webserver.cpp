@@ -236,55 +236,68 @@ void Drivhus::WebServer::setSensorScanCompleted() {
   notifyClients("CSI", "-");
 }
 
-void Drivhus::WebServer::onIndoorTempChanged(float value) {
-  if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
-    m_temp[0]=value;
-    notifyClients("ITEMP", String(value, 1).c_str());
-  }
-}
-
-void Drivhus::WebServer::onIndoorHumidityChanged(float value) {
-  if (value<(m_humid[0]*0.99f) || value>(m_humid[0]*1.01f)) {
-    m_humid[0]=value;
-    notifyClients("IHUMID", String(value, 1).c_str());
-  }
-}
-
-void Drivhus::WebServer::onOutdoorTempChanged(float value) {
-  if (value<(m_temp[1]*0.99f) || value>(m_temp[1]*1.01f)) {
-    m_temp[1]=value;
-    notifyClients("OTEMP", String(value, 1).c_str());
-  }
-}
-
-void Drivhus::WebServer::onOutdoorHumidityChanged(float value) {
-  if (value<(m_humid[1]*0.99f) || value>(m_humid[1]*1.01f)) {
-    m_humid[1]=value;
-    notifyClients("OHUMID", String(value, 1).c_str());
-  }
-}
-
-void Drivhus::WebServer::onLightChanged(float value) {
-  if (value<(m_light*0.99f) || value>(m_light*1.01f)) {
-    m_light=value;
-    notifyClients("ILIGHT", String(value, 1).c_str());
-  }
-}
-void Drivhus::WebServer::onVoltChanged(float value) {
-  if (value<(m_volt*0.99f) || value>(m_volt*1.01f)) {
-    m_volt=value;
-    notifyClients("VOLT", String(value, 2).c_str());
-  }
-}
-
-void Drivhus::WebServer::onSunriseChanged(float value) {
-  m_sunrise = value;
-  updateGrowlightTime();
-}
-
-void Drivhus::WebServer::onSunsetChanged(float value) {
-  m_sunset = value;
-  updateGrowlightTime();
+void Drivhus::WebServer::onValueChanged(Type type, uint8_t plant_id) {
+  switch(type) {
+    case INDOOR_TEMP: {
+      float value = Drivhus::getSettings()->getIndoorTemp();
+      if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
+          m_temp[0] = value;
+          notifyClients("ITEMP", String(value, 1).c_str());
+      }
+      break;
+    }
+    case INDOOR_HUMIDITY: {
+      float value = Drivhus::getSettings()->getIndoorHumidity();
+      if (value<(m_humid[0]*0.99f) || value>(m_humid[0]*1.01f)) {
+        m_humid[0]=value;
+        notifyClients("IHUMID", String(value, 1).c_str());
+      }
+      break;
+    }
+    case OUTDOOR_TEMP: {
+      float value = Drivhus::getSettings()->getOutdoorTemp();
+      if (value<(m_temp[1]*0.99f) || value>(m_temp[1]*1.01f)) {
+        m_temp[1]=value;
+        notifyClients("OTEMP", String(value, 1).c_str());
+      }
+      break;
+    }
+    case OUTDOOR_HUMIDITY: {
+      float value = Drivhus::getSettings()->getOutdoorHumidity();
+      if (value<(m_humid[1]*0.99f) || value>(m_humid[1]*1.01f)) {
+        m_humid[1]=value;
+        notifyClients("OHUMID", String(value, 1).c_str());
+      }
+      break;
+    }
+    case LIGHT: {
+      float value = Drivhus::getSettings()->getLight();
+      if (value<(m_light*0.99f) || value>(m_light*1.01f)) {
+        m_light=value;
+        notifyClients("ILIGHT", String(value, 1).c_str());
+      }
+      break;
+    }
+    case VOLT: {
+      float value = Drivhus::getSettings()->getVolt();
+      if (value<(m_volt*0.99f) || value>(m_volt*1.01f)) {
+        m_volt=value;
+        notifyClients("VOLT", String(value, 2).c_str());
+      }
+      break;
+    }
+    case SUNRISE: {
+      m_sunrise = Drivhus::getSettings()->getSunrise();
+      updateGrowlightTime();
+      break;
+    }
+    case SUNSET: {
+      m_sunset = Drivhus::getSettings()->getSunset();
+      updateGrowlightTime();
+      break;
+    }
+    default: break;
+  };
 }
 
 void Drivhus::WebServer::addWarningMessage(const std::string& msg) {
