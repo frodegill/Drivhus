@@ -4,11 +4,12 @@
 #include <stdint.h>
 
 #include "component.h"
+#include "settings.h"
 
 
 namespace Drivhus {
 
-class CD74HC4067 : public Component
+class CD74HC4067 : public Component, public OnConfigChangeListener
 {
 public:
   CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin);
@@ -16,7 +17,12 @@ public:
   virtual void loop() override;
   virtual const char* getName() const override {return "CD74HC4067";}
 
+protected:
+  virtual void onConfigChanged(OnConfigChangeListener::Type type, uint8_t /*plant_id*/) override;
+
+public:
   [[nodiscard]] bool isBusy() const {return m_previous_watering_time!=0L;}
+
 private:
   void activate(uint8_t plant_id);
   void deactivate();

@@ -21,6 +21,7 @@ Drivhus::CD74HC4067::CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, 
   m_previous_watering_time(0L),
   m_previous_watering_duration(0L),
   m_current_plant_id(0) {
+  Drivhus::getSettings()->addConfigChangeListener(this);
 }
 
 bool Drivhus::CD74HC4067::init() {
@@ -66,6 +67,9 @@ void Drivhus::CD74HC4067::loop() {
       activate(m_current_plant_id);
     }
   }
+}
+
+void Drivhus::CD74HC4067::onConfigChanged(Drivhus::OnConfigChangeListener::Type type, uint8_t /*plant_id*/) {
 }
 
 void Drivhus::CD74HC4067::activate(uint8_t plant_id) {
