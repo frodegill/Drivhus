@@ -144,7 +144,7 @@ public:
   void setVolt(float value) {m_volt=value; notifyValueChangeListeners(OnValueChangeListener::Type::VOLT);}
   void setSunrise(float value) {m_sunrise=value; Serial.println("Setting sunrise"); notifyValueChangeListeners(OnValueChangeListener::Type::SUNRISE);}
   void setSunset(float value) {m_sunset=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNSET);}
-  [[nodiscard]] float getPlantMoisture(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].current_value:0.0f;}
+  [[nodiscard]] float getPlantMoisture(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id) && getEnabled(plant_id) ? m_plants[plant_id-1].current_value : 0.0f;}
   [[nodiscard]] float getIndoorTemp() const {return m_indoor_temp;}
   [[nodiscard]] float getIndoorHumidity() const {return m_indoor_humidity;}
   [[nodiscard]] float getOutdoorTemp() const {return m_outdoor_temp;}
@@ -170,8 +170,8 @@ public:
   [[nodiscard]] unsigned long getMsBetweenReading() const {return m_ms_between_reading;}
   [[nodiscard]] float getFanActivateTemp() const {return m_fan_activate_temp_value;}
   [[nodiscard]] float getFanActivateHumidity() const {return m_fan_activate_humid_value;}
-  [[nodiscard]] bool getRequestWatering(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].watering_requested:false;}
-  [[nodiscard]] bool getIsInWateringCycle(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].in_watering_cycle:false;}
+  [[nodiscard]] bool getRequestWatering(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id) && getEnabled(plant_id) ? m_plants[plant_id-1].watering_requested : false;}
+  [[nodiscard]] bool getIsInWateringCycle(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id) && getEnabled(plant_id) ? m_plants[plant_id-1].in_watering_cycle : false;}
   [[nodiscard]] bool getEnabled(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].enabled:false;}
   [[nodiscard]] float getWetValue(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].wet_value:0.0f;}
   [[nodiscard]] float getDryValue(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].dry_value:0.0f;}
