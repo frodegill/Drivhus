@@ -18,10 +18,6 @@ Drivhus::RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
   for (uint32_t i=0; i<SENSOR_PRESENT_UINT32_NEEDED; i++) {
     m_sensor_present[i] = 0;
   }
-  for (uint8_t i=0; i<SENSOR_COUNT; i++) {
-    m_sensor_temp[i] = 0x00;
-    m_sensor_humidity[i] = 0x00;
-  }
 }
 
 bool Drivhus::RS485::init() {
@@ -57,9 +53,8 @@ void Drivhus::RS485::loop() {
         m_previous_scanned_sensor_id = (m_previous_scanned_sensor_id==UNDEFINED_ID) ? (m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID) : m_previous_scanned_sensor_id+1;
       }
 
-      bool is_present = checkIfSensorIsPresent(m_previous_scanned_sensor_id);
-      if (is_present) {
-        setSensorValues(m_previous_scanned_sensor_id, tmp_holding_registers[0], tmp_holding_registers[1]);
+      if (checkIfSensorIsPresent(m_previous_scanned_sensor_id)) {
+        Drivhus::getSettings()->setPlantMoisture(m_previous_scanned_sensor_id, tmp_holding_registers[1]/100.0f);
       }
       Drivhus::getNetwork()->getWebServer()->updateSensor(m_previous_scanned_sensor_id);
   }
@@ -79,20 +74,6 @@ std::set<uint8_t> Drivhus::RS485::getPresentSensors() const {
     }
   }
   return present_sensors;
-}
-
-float Drivhus::RS485::getSensorTemp(uint8_t id) {
-  if (id<DRIVHUS_MIN_ID || id>DRIVHUS_MAX_ID || !isSensorPresent(id))
-    return 0.0f;
-
-  return m_sensor_temp[id-1]/10.0f;
-}
-
-float Drivhus::RS485::getSensorHumidity(uint8_t id) {
-  if (id<DRIVHUS_MIN_ID || id>DRIVHUS_MAX_ID || !isSensorPresent(id))
-    return 0.0f;
-
-  return m_sensor_humidity[id-1]/100.0f;
 }
 
 void Drivhus::RS485::setSensorShouldBeReassigned(uint8_t old_id, uint8_t new_id) {
@@ -129,13 +110,7 @@ void Drivhus::RS485::setSensorPresent(uint8_t id, bool is_present) {
   } else {
     m_sensor_present[index] &= ~(1<<bit);
   }
-}
-
-void Drivhus::RS485::setSensorValues(uint8_t id, uint16_t temp, uint16_t humidity) {
-  if (id>=DRIVHUS_MIN_ID && id<=DRIVHUS_MAX_ID && isSensorPresent(id)) {
-    m_sensor_temp[id-1] = temp;
-    m_sensor_humidity[id-1] = humidity;
-  }
+  Drivhus::getSettings()->setEnabled(id, is_present);
 }
 
 void Drivhus::RS485::checkIfSensorsShouldBeReassigned() {

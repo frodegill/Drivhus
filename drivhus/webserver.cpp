@@ -451,7 +451,7 @@ void Drivhus::WebServer::updateGrowlightTime() {
 }
 
 std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const {
-  return Drivhus::getRS485()->isSensorPresent(sensor_id) ? Drivhus::floatToString(Drivhus::getRS485()->getSensorHumidity(sensor_id), 2) : "Not available";
+  return Drivhus::getRS485()->isSensorPresent(sensor_id) ? Drivhus::floatToString(Drivhus::getSettings()->getPlantMoisture(sensor_id+1), 2) : "Not available";
 }
 
 std::string Drivhus::WebServer::getUnusedSensorIdsAsString() const {

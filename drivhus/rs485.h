@@ -47,15 +47,11 @@ public:
   [[nodiscard]] bool isSensorPresent(uint8_t id) const;
   [[nodiscard]] std::set<uint8_t> getPresentSensors() const;
 
-  [[nodiscard]] float getSensorTemp(uint8_t id);
-  [[nodiscard]] float getSensorHumidity(uint8_t id);
-
   void setSensorShouldBeReassigned(uint8_t old_id, uint8_t new_id);
 
 private:
   [[nodiscard]] bool checkIfSensorIsPresent(uint8_t id);
   void setSensorPresent(uint8_t id, bool is_present);
-  void setSensorValues(uint8_t id, uint16_t temp, uint16_t humidity);
 
   void checkIfSensorsShouldBeReassigned();
   [[nodiscard]] bool setNewSensorId(uint8_t old_id, uint8_t new_id, bool force=false);
@@ -74,8 +70,6 @@ private:
   bool m_performed_full_scan;
 
   uint32_t m_sensor_present[SENSOR_PRESENT_UINT32_NEEDED];
-  uint16_t m_sensor_temp[SENSOR_COUNT];
-  uint16_t m_sensor_humidity[SENSOR_COUNT];
 
   uint16_t tmp_holding_registers[2];
 };
