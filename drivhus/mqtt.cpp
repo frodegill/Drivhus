@@ -19,15 +19,14 @@ Drivhus::MQTT::MQTT()
   Drivhus::getSettings()->addValueChangeListener(this);
 }
 
-bool Drivhus::MQTT::init()
-{
+bool Drivhus::MQTT::init() {
   m_mqtt_client.setClient(m_esp_client);
   m_mqtt_client.setServer(Drivhus::getSettings()->getMQTTServername().c_str(), 1883);
   m_mqtt_client.setCallback(globalMQTTCallback);
+  return true;
 }
 
-void Drivhus::MQTT::loop()
-{
+void Drivhus::MQTT::loop() {
   if (!Drivhus::getSettings()->hasMQTTServer()) {
     return;
   }
