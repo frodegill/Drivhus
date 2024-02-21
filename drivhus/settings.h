@@ -51,10 +51,13 @@ public:
     PLANT_WATERING_DURATION,
     PLANT_WATERING_GRACE_VALUE,
     PLANT_WATERING_STARTED,
-    PLANT_WATERING_ENDED
+    PLANT_WATERING_ENDED,
+    SENSOR_SCAN_STARTED,
+    SENSOR_UPDATED,
+    SENSOR_SCAN_ENDED
   };
 
-  virtual void onConfigChanged(OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id*/) {}
+  virtual void onConfigChanged(OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id/sensor_id*/) {}
 };
 
 class Settings : public Component
@@ -136,10 +139,10 @@ public:
                                                           m_plants[plant_id-1].current_value=value;
                                                           notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_MOISTURE, plant_id);
                                                         }}
-  void setIndoorTemp(float value) {m_indoor_temp=value; notifyValueChangeListeners(OnValueChangeListener::Type::INDOOR_TEMP);}
-  void setIndoorHumidity(float value) {m_indoor_humidity=value; notifyValueChangeListeners(OnValueChangeListener::Type::INDOOR_HUMIDITY);}
-  void setOutdoorTemp(float value) {m_outdoor_temp=value; notifyValueChangeListeners(OnValueChangeListener::Type::OUTDOOR_TEMP);}
-  void setOutdoorHumidity(float value) {m_outdoor_humidity=value; notifyValueChangeListeners(OnValueChangeListener::Type::OUTDOOR_HUMIDITY);}
+  void setIndoorTemp(float value) {m_indoor_temp=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::INDOOR_TEMP);}
+  void setIndoorHumidity(float value) {m_indoor_humidity=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::INDOOR_HUMIDITY);}
+  void setOutdoorTemp(float value) {m_outdoor_temp=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::OUTDOOR_TEMP);}
+  void setOutdoorHumidity(float value) {m_outdoor_humidity=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::OUTDOOR_HUMIDITY);}
   void setLight(float value) {m_light=value; notifyValueChangeListeners(OnValueChangeListener::Type::LIGHT);}
   void setVolt(float value) {m_volt=value; notifyValueChangeListeners(OnValueChangeListener::Type::VOLT);}
   void setSunrise(float value) {m_sunrise=value; Serial.println("Setting sunrise"); notifyValueChangeListeners(OnValueChangeListener::Type::SUNRISE);}
@@ -149,11 +152,15 @@ public:
   [[nodiscard]] float getIndoorHumidity() const {return m_indoor_humidity;}
   [[nodiscard]] float getOutdoorTemp() const {return m_outdoor_temp;}
   [[nodiscard]] float getOutdoorHumidity() const {return m_outdoor_humidity;}
+  [[nodiscard]] float getOutdoorAsIndoorHumidity() const {return m_outdoor_as_indoor_humidity;}
   [[nodiscard]] float getLight() const {return m_light;}
   [[nodiscard]] float getVolt() const {return m_volt;}
   [[nodiscard]] float getSunrise() const {return m_sunrise;}
   [[nodiscard]] float getSunset() const {return m_sunset;}
+private:
+  void calculateOutdoorHumidityIndoor();
 
+public:
   void setMsBetweenReading(unsigned long value) {m_ms_between_reading=value; notifyConfigChangeListeners(OnConfigChangeListener::Type::MS_BETWEEN_READING);}
   void setFanActivateTemp(float value) {m_fan_activate_temp_value=value; notifyConfigChangeListeners(OnConfigChangeListener::Type::FAN_ACTIVATE_TEMP);}
   void setFanActivateHumidity(float value) {m_fan_activate_humid_value=value; notifyConfigChangeListeners(OnConfigChangeListener::Type::FAN_ACTIVATE_HUMIDITY);}
@@ -167,6 +174,9 @@ public:
   void setWateringStarted(uint8_t plant_id) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=millis(); notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_WATERING_STARTED, plant_id);}}
   void setWateringEnded(uint8_t plant_id) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=millis(); notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_WATERING_ENDED, plant_id);}}
   void setForceUpdateWateringTime(uint8_t plant_id, unsigned long value) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=value;}}
+  void setSensorScanStarted() {notifyConfigChangeListeners(OnConfigChangeListener::Type::SENSOR_SCAN_STARTED);}
+  void setSensorUpdated(uint8_t sensor_id) {notifyConfigChangeListeners(OnConfigChangeListener::Type::SENSOR_UPDATED, sensor_id);}
+  void setSensorScanEnded() {notifyConfigChangeListeners(OnConfigChangeListener::Type::SENSOR_SCAN_ENDED);}
   [[nodiscard]] unsigned long getMsBetweenReading() const {return m_ms_between_reading;}
   [[nodiscard]] float getFanActivateTemp() const {return m_fan_activate_temp_value;}
   [[nodiscard]] float getFanActivateHumidity() const {return m_fan_activate_humid_value;}
@@ -215,6 +225,7 @@ public:
   float m_indoor_humidity;
   float m_outdoor_temp;
   float m_outdoor_humidity;
+  float m_outdoor_as_indoor_humidity;
   float m_light;
   float m_volt;
   float m_sunrise;

@@ -47,16 +47,21 @@ void Drivhus::RS485::loop() {
         if (!m_performed_full_scan) {
           m_performed_full_scan = true;
         }
-        Drivhus::getNetwork()->getWebServer()->setSensorScanCompleted();
+        Drivhus::getSettings()->setSensorScanEnded();
         return;
       } else {
-        m_previous_scanned_sensor_id = (m_previous_scanned_sensor_id==UNDEFINED_ID) ? (m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID) : m_previous_scanned_sensor_id+1;
+        if (m_previous_scanned_sensor_id == UNDEFINED_ID) {
+        Drivhus::getSettings()->setSensorScanStarted();
+          m_previous_scanned_sensor_id = m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID;
+        } else {
+          m_previous_scanned_sensor_id++;
+        }
       }
 
       if (checkIfSensorIsPresent(m_previous_scanned_sensor_id)) {
         Drivhus::getSettings()->setPlantMoisture(m_previous_scanned_sensor_id, tmp_holding_registers[1]/100.0f);
       }
-      Drivhus::getNetwork()->getWebServer()->updateSensor(m_previous_scanned_sensor_id);
+      Drivhus::getSettings()->setSensorUpdated(m_previous_scanned_sensor_id);
   }
 }
 
@@ -139,8 +144,8 @@ bool Drivhus::RS485::setNewSensorId(uint8_t old_id, uint8_t new_id, bool force) 
   if (ret) {
     setSensorPresent(old_id, false);
     setSensorPresent(new_id, true);
-    Drivhus::getNetwork()->getWebServer()->updateSensor(old_id);
-    Drivhus::getNetwork()->getWebServer()->updateSensor(new_id);
+    Drivhus::getSettings()->setSensorUpdated(old_id);
+    Drivhus::getSettings()->setSensorUpdated(new_id);
   }
   return ret;
 }

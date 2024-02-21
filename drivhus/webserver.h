@@ -17,7 +17,7 @@
 
 namespace Drivhus {
 
-class WebServer : public OnValueChangeListener
+class WebServer : public OnValueChangeListener, public OnConfigChangeListener
 {
 public:
   static constexpr unsigned long WARNING_MESSAG_DELAY_MS = 5000L;
@@ -33,11 +33,10 @@ public:
 
 protected:
   virtual void onValueChanged(OnValueChangeListener::Type type, uint8_t plant_id) override;
+  virtual void onConfigChanged(OnConfigChangeListener::Type type, uint8_t id) override;
 
 public:
   void updateSetupMode();
-  void updateSensor(uint8_t sensor_id);
-  void setSensorScanCompleted();
 
   size_t wsClientCount() const {return m_ws->count();}
 
@@ -53,10 +52,12 @@ private:
   [[nodiscard]] float getLight() const {return m_light;}
   [[nodiscard]] float getOutdoorTemp() const {return m_temp[1];}
   [[nodiscard]] float getOutdoorHumid() const {return m_humid[1];}
+  [[nodiscard]] float getOutdoorAsIndoorHumid() const {return m_humid[2];}
   [[nodiscard]] float getVolt() const {return m_volt;}
   [[nodiscard]] std::string getGrowlightTime() const {return m_growlight_time;}
 
   void textAll(const std::string& key, const std::string& data);
+  void updateSensor(uint8_t sensor_id);
   void updateNewSensorIdButtons(uint8_t sensor_id);
   void updateGrowlightTime();
 
@@ -64,6 +65,7 @@ private:
   [[nodiscard]] std::string getUnusedSensorIdsAsString() const;
   [[nodiscard]] uint8_t getUnusedSensorId() const; //Returns the ID if one, and only one, sensor is within the range. UNDEFINED_ID if not.
   [[nodiscard]] std::string generateSensorSelectOptions(uint8_t sensor_id) const;
+  [[nodiscard]] std::string generateOutdoorHumidityAsString() const;
   [[nodiscard]] std::string generateVoltMultiplierCalibration() const;
   [[nodiscard]] std::string generateTimezoneSelectOptions() const;
 
@@ -81,8 +83,8 @@ private:
   bool m_is_showing_setup;
   std::set<uint8_t> m_present_sensors;
 
-  float m_temp[2];
-  float m_humid[2];
+  float m_temp[2]; //0==indoor, 1=outdoor
+  float m_humid[3]; //0=indoor, 1=outdoor, 2=outdoor as indoor
   float m_light;
   float m_volt;
   float m_sunrise;

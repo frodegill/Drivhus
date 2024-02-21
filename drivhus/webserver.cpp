@@ -67,7 +67,7 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
 <tr><td>Indoor humidity</td><td><span id="IHUMID">%IHUMID%</span><span>&nbsp;%%RH</span></td></tr>
 <tr><td>Indoor light</td><td><span id="ILIGHT">%ILIGHT%</span><span>&nbsp;%%</span></td></tr>
 <tr><td>Outdoor temp</td><td><span id="OTEMP">%OTEMP%</span><span>&nbsp;C</span></td></tr>
-<tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span><span>&nbsp;%%RH</span></td></tr>
+<tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span></td></tr>
 <tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span><span id="VM">%VM%</span></td></tr>
 <tr><td>Growlight time</td><td><span id="GT">%GT%</span></td></tr>
 </table>
@@ -131,6 +131,7 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
 
 Drivhus::WebServer::WebServer()
 : Drivhus::OnValueChangeListener(),
+  Drivhus::OnConfigChangeListener(),
   m_is_showing_setup(false),
   m_warning_message_time(0L),
   m_is_testing_relays(false),
@@ -139,10 +140,12 @@ Drivhus::WebServer::WebServer()
   m_relay_test_on(false)
 {
   Drivhus::getSettings()->addValueChangeListener(this);
+  Drivhus::getSettings()->addConfigChangeListener(this);
   m_temp[0] = Drivhus::getSettings()->getIndoorTemp();
   m_humid[0] = Drivhus::getSettings()->getIndoorHumidity();
   m_temp[1] = Drivhus::getSettings()->getOutdoorTemp();
   m_humid[1] = Drivhus::getSettings()->getOutdoorHumidity();
+  m_humid[2] = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
   m_light = Drivhus::getSettings()->getLight();
   m_volt = Drivhus::getSettings()->getVolt();
   m_sunrise = Drivhus::getSettings()->getSunrise();
@@ -211,62 +214,34 @@ void Drivhus::WebServer::updateSetupMode() {
   } 
 }
 
-void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
-  updateSetupMode();
-
-  bool present = Drivhus::getRS485()->isSensorPresent(sensor_id);
-  if (present && m_present_sensors.find(sensor_id) == m_present_sensors.end()) {
-    m_present_sensors.emplace(sensor_id);
-  } else if (!present && m_present_sensors.find(sensor_id) != m_present_sensors.end()) {
-    m_present_sensors.erase(sensor_id);
-  }
-
-  if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
-    notifyClients(std::string("SV")+Drivhus::uint8ToHex(sensor_id), getSensorValueAsString(sensor_id));
-    updateNewSensorIdButtons(sensor_id);
-  } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID && present) {
-    notifyClients("SIX", getUnusedSensorIdsAsString().c_str());
-    updateNewSensorIdButtons(sensor_id);
-  }
-
-  notifyClients("CSI", std::to_string(sensor_id)); //Current Sensor ID
-}
-
-void Drivhus::WebServer::setSensorScanCompleted() {
-  notifyClients("CSI", "-");
-}
-
 void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
   switch(type) {
-    case INDOOR_TEMP: {
+    case INDOOR_TEMP: //[[fallthrough]]
+    case INDOOR_HUMIDITY: //[[fallthrough]]
+    case OUTDOOR_TEMP: //[[fallthrough]]
+    case OUTDOOR_HUMIDITY: {
       float value = Drivhus::getSettings()->getIndoorTemp();
       if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
           m_temp[0] = value;
           notifyClients("ITEMP", String(value, 1).c_str());
       }
-      break;
-    }
-    case INDOOR_HUMIDITY: {
-      float value = Drivhus::getSettings()->getIndoorHumidity();
+      value = Drivhus::getSettings()->getIndoorHumidity();
       if (value<(m_humid[0]*0.99f) || value>(m_humid[0]*1.01f)) {
         m_humid[0]=value;
         notifyClients("IHUMID", String(value, 1).c_str());
       }
-      break;
-    }
-    case OUTDOOR_TEMP: {
-      float value = Drivhus::getSettings()->getOutdoorTemp();
+      value = Drivhus::getSettings()->getOutdoorTemp();
       if (value<(m_temp[1]*0.99f) || value>(m_temp[1]*1.01f)) {
         m_temp[1]=value;
         notifyClients("OTEMP", String(value, 1).c_str());
       }
-      break;
-    }
-    case OUTDOOR_HUMIDITY: {
-      float value = Drivhus::getSettings()->getOutdoorHumidity();
-      if (value<(m_humid[1]*0.99f) || value>(m_humid[1]*1.01f)) {
+      value = Drivhus::getSettings()->getOutdoorHumidity();
+      float value2 = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
+      if (value<(m_humid[1]*0.99f) || value>(m_humid[1]*1.01f) ||
+          value2<(m_humid[2]*0.99f) || value2>(m_humid[2]*1.01f)) {
         m_humid[1]=value;
-        notifyClients("OHUMID", String(value, 1).c_str());
+        m_humid[2]=value2;
+        notifyClients("OHUMID", generateOutdoorHumidityAsString().c_str());
       }
       break;
     }
@@ -297,6 +272,16 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       break;
     }
     default: break;
+  };
+}
+
+void Drivhus::WebServer::onConfigChanged(Drivhus::OnConfigChangeListener::Type type, uint8_t id) {
+  switch(type) {
+    case SENSOR_SCAN_ENDED:
+      notifyClients("CSI", "-");
+      break;
+    case SENSOR_UPDATED:
+      updateSensor(id);
   };
 }
 
@@ -371,7 +356,7 @@ String Drivhus::WebServer::processor(const String& var){
   } else if (var == "OTEMP") {
     return String(Drivhus::getNetwork()->getWebServer()->getOutdoorTemp(), 1);
   } else if (var == "OHUMID") {
-    return String(Drivhus::getNetwork()->getWebServer()->getOutdoorHumid(), 1);
+    return String(Drivhus::getNetwork()->getWebServer()->generateOutdoorHumidityAsString().c_str());
   } else if (var == "VOLT") {
     return String(Drivhus::getNetwork()->getWebServer()->getVolt(), 2);
   } else if (var == "VM") {
@@ -410,6 +395,27 @@ String Drivhus::WebServer::processor(const String& var){
 
 void Drivhus::WebServer::textAll(const std::string& key, const std::string& data) {
   m_ws->textAll((key+data).c_str());
+}
+
+void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
+  updateSetupMode();
+
+  bool present = Drivhus::getRS485()->isSensorPresent(sensor_id);
+  if (present && m_present_sensors.find(sensor_id) == m_present_sensors.end()) {
+    m_present_sensors.emplace(sensor_id);
+  } else if (!present && m_present_sensors.find(sensor_id) != m_present_sensors.end()) {
+    m_present_sensors.erase(sensor_id);
+  }
+
+  if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
+    notifyClients(std::string("SV")+Drivhus::uint8ToHex(sensor_id), getSensorValueAsString(sensor_id));
+    updateNewSensorIdButtons(sensor_id);
+  } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID && present) {
+    notifyClients("SIX", getUnusedSensorIdsAsString().c_str());
+    updateNewSensorIdButtons(sensor_id);
+  }
+
+  notifyClients("CSI", std::to_string(sensor_id)); //Current Sensor ID
 }
 
 void Drivhus::WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
@@ -498,6 +504,12 @@ std::string Drivhus::WebServer::generateSensorSelectOptions(uint8_t sensor_id) c
     }
   }
   ss << "</select><button onCLick=\"updateSensorId('" << Drivhus::uint8ToHex(sensor_id) << "')\">Set new sensor ID</button>";
+  return ss.str();
+}
+
+std::string Drivhus::WebServer::generateOutdoorHumidityAsString() const {
+  std::stringstream ss;
+  ss << Drivhus::floatToString(m_humid[1], 1) << " %RH (" << Drivhus::floatToString(m_humid[2], 1) << " %RH)";
   return ss.str();
 }
 

@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "global.h"
+#include "log.h"
 
 
 Drivhus::Fan::Fan(uint8_t pin)
@@ -18,10 +19,10 @@ Drivhus::Fan::Fan(uint8_t pin)
   m_previous_event_time(0L),
   m_fan_activate_temp_value(0.0f),
   m_fan_activate_humid_value(0.0f),
-  m_indoor_temp(0.0f),
-  m_indoor_humidity(0.0f),
-  m_outdoor_temp(0.0f),
-  m_outdoor_humidity_indoor(100.0f),
+  m_indoor_temp(NAN),
+  m_indoor_humidity(NAN),
+  m_outdoor_temp(NAN),
+  m_outdoor_humidity_indoor(NAN),
   m_activated(false)
 {
   Drivhus::getSettings()->addValueChangeListener(this);
@@ -33,7 +34,11 @@ bool Drivhus::Fan::init() {
 
   m_fan_activate_temp_value = Drivhus::getSettings()->getFanActivateTemp();
   m_fan_activate_humid_value = Drivhus::getSettings()->getFanActivateHumidity();
-  calculateOutdoorHumidityIndoor();
+
+  m_indoor_temp = Drivhus::getSettings()->getIndoorTemp();
+  m_indoor_humidity = Drivhus::getSettings()->getIndoorHumidity();
+  m_outdoor_temp = Drivhus::getSettings()->getOutdoorTemp();
+  m_outdoor_humidity_indoor = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
 
   toggle(Drivhus::OFF);
   return true;
@@ -46,14 +51,18 @@ void Drivhus::Fan::loop() {
   }
 
   if ((m_previous_event_time+ON_OFF_INTERVAL_MS)<current_time) {
-    bool temp_above_treshold = m_indoor_temp > m_fan_activate_temp_value && //Can we get cooler air into the greenhouse?
+    bool temp_above_treshold = !isnan(m_indoor_temp) && !isnan(m_outdoor_temp) &&
+                               m_indoor_temp > m_fan_activate_temp_value && //Can we get cooler air into the greenhouse?
                                (m_indoor_temp-TEMP_DIFF_TRESHOLD) > m_outdoor_temp;
-    bool humidity_above_treshold = m_indoor_humidity > m_fan_activate_humid_value && //Can we get dryer air into the greenhouse?
+    bool humidity_above_treshold = !isnan(m_indoor_humidity) && !isnan(m_outdoor_humidity_indoor) &&
+                                   m_indoor_humidity > m_fan_activate_humid_value && //Can we get dryer air into the greenhouse?
                                    (m_indoor_humidity-HUMIDITY_DIFF_TRESHOLD) > m_outdoor_humidity_indoor;
     
     if (m_activated && !temp_above_treshold && !humidity_above_treshold) {
+      Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, "Toggling fan OFF");
       toggle(Drivhus::OFF);
     } else if (!m_activated && (temp_above_treshold || humidity_above_treshold)) {
+      Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, "Toggling fan ON");
       toggle(Drivhus::ON);
     }
   }
@@ -73,7 +82,7 @@ void Drivhus::Fan::onValueChanged(Drivhus::OnValueChangeListener::Type type, uin
         break;
       default: break;
     }; 
-    calculateOutdoorHumidityIndoor();
+    m_outdoor_humidity_indoor = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
   }
 }
 
@@ -93,12 +102,4 @@ void Drivhus::Fan::toggle(bool on) {
   m_activated = on;
   m_previous_event_time = millis();
   digitalWrite(m_pin, on ? HIGH : LOW);
-}
-
-void Drivhus::Fan::calculateOutdoorHumidityIndoor() {
-  float outdoor_humidity = Drivhus::getSettings()->getOutdoorHumidity();
-  float const_a = 17.625f;
-  float const_b = 243.04f;
-  float dew = const_b*(std::log(outdoor_humidity/100.0f)+((const_a*m_outdoor_temp)/(const_b+m_outdoor_temp))) / (const_a-std::log(outdoor_humidity/100.0f)-((const_a*m_outdoor_temp)/(const_b+m_outdoor_temp)));
-  m_outdoor_humidity_indoor = 100.0f*std::exp((const_a*dew)/(const_b+dew)) / std::exp((const_a*m_indoor_temp)/(const_b+m_indoor_temp));
 }

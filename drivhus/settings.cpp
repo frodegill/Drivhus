@@ -23,6 +23,7 @@ Drivhus::Settings::Settings(uint8_t pin)
   m_indoor_humidity(0.0f),
   m_outdoor_temp(0.0f),
   m_outdoor_humidity(0.0f),
+  m_outdoor_as_indoor_humidity(0.0f),
   m_light(0.0f),
   m_volt(0.0f),
   m_sunrise(0.0f),
@@ -252,5 +253,16 @@ void Drivhus::Settings::flushSettings() {
     std::stringstream ss;
     ss << "Flushing settings " << (result ? "SUCCEEDED" : "FAILED");
     Drivhus::getNetwork()->getWebServer()->addWarningMessage(ss.str());
+  }
+}
+
+void Drivhus::Settings::calculateOutdoorHumidityIndoor() {
+  if (isnan(m_indoor_temp) || isnan(m_outdoor_temp) || isnan(m_outdoor_humidity)) {
+    m_outdoor_as_indoor_humidity = NAN;
+  } else {
+    float const_a = 17.625f;
+    float const_b = 243.04f;
+    float dew = const_b*(std::log(m_outdoor_humidity/100.0f)+((const_a*m_outdoor_temp)/(const_b+m_outdoor_temp))) / (const_a-std::log(m_outdoor_humidity/100.0f)-((const_a*m_outdoor_temp)/(const_b+m_outdoor_temp)));
+    m_outdoor_as_indoor_humidity = 100.0f*std::exp((const_a*dew)/(const_b+dew)) / std::exp((const_a*m_indoor_temp)/(const_b+m_indoor_temp));
   }
 }

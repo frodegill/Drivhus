@@ -28,7 +28,6 @@ protected:
 
 private:
   void toggle(bool on);
-  void calculateOutdoorHumidityIndoor();
   
 private:
   uint8_t m_pin;
