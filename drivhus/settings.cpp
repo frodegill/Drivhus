@@ -26,6 +26,9 @@ Drivhus::Settings::Settings(uint8_t pin)
   m_outdoor_as_indoor_humidity(0.0f),
   m_light(0.0f),
   m_volt(0.0f),
+  m_water_low_trigger(HIGH),
+  m_water_high_trigger(HIGH),
+  m_water_valve_status(ValveStatus::CLOSED),
   m_sunrise(0.0f),
   m_sunset(0.0f) {
 }

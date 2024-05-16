@@ -68,6 +68,9 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
 <tr><td>Indoor light</td><td><span id="ILIGHT">%ILIGHT%</span><span>&nbsp;%%</span></td></tr>
 <tr><td>Outdoor temp</td><td><span id="OTEMP">%OTEMP%</span><span>&nbsp;C</span></td></tr>
 <tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span></td></tr>
+<tr><td>Water Low Trigger</td><td><span id="WLL">%WLL%</span></td></tr>
+<tr><td>Water High Trigger</td><td><span id="WLH">%WLH%</span></td></tr>
+<tr><td>Water Valve</td><td><span id="WV">%WV%</span></td></tr>
 <tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span><span id="VM">%VM%</span></td></tr>
 <tr><td>Growlight time</td><td><span id="GT">%GT%</span></td></tr>
 </table>
@@ -86,11 +89,11 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
   function onOpen(event){}
   function onClose(event){setTimeout(initWebSocket, 2000);}
   function onMessage(event) {
-    if (event.data.startsWith('VM') || event.data.startsWith('GT')){
+    if (event.data.startsWith('VM') || event.data.startsWith('GT') || event.data.startsWith('WV')){
       document.getElementById(event.data.substring(0,2)).innerHTML = event.data.substring(2);
     } else if (event.data.startsWith('SV') || event.data.startsWith('NS')){
       document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
-    } else if (event.data.startsWith('CSI') || event.data.startsWith('SIX') || event.data.startsWith('NIX')){
+    } else if (event.data.startsWith('CSI') || event.data.startsWith('SIX') || event.data.startsWith('NIX') || event.data.startsWith('WLL') || event.data.startsWith('WLH')){
       document.getElementById(event.data.substring(0,3)).innerHTML = event.data.substring(3);
     } else if (event.data.startsWith('VOLT')){
       document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
@@ -261,6 +264,18 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       }
       break;
     }
+    case WATER_LOW_TRIGGER: {
+      notifyClients("WLL", Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
+      break;
+    }
+    case WATER_HIGH_TRIGGER: {
+      notifyClients("WLH", Drivhus::getSettings()->getWaterHighTrigger()==LOW ? "Inactive" : "Active");
+      break;
+    }
+    case WATER_VALVE: {
+      notifyClients("WV", Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
+      break;
+    }
     case SUNRISE: {
       m_sunrise = Drivhus::getSettings()->getSunrise();
       updateGrowlightTime();
@@ -357,6 +372,12 @@ String Drivhus::WebServer::processor(const String& var){
     return String(Drivhus::getNetwork()->getWebServer()->getOutdoorTemp(), 1);
   } else if (var == "OHUMID") {
     return String(Drivhus::getNetwork()->getWebServer()->generateOutdoorHumidityAsString().c_str());
+  } else if (var == "WLL") {
+    return String(Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
+  } else if (var == "WLH") {
+    return String(Drivhus::getSettings()->getWaterHighTrigger()==LOW ? "Inactive" : "Active");
+  } else if (var == "WV") {
+    return String(Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
   } else if (var == "VOLT") {
     return String(Drivhus::getNetwork()->getWebServer()->getVolt(), 2);
   } else if (var == "VM") {

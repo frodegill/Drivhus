@@ -30,8 +30,11 @@ public:
     OUTDOOR_HUMIDITY=Drivhus::MAX_PLANT_COUNT+3,
     LIGHT=Drivhus::MAX_PLANT_COUNT+4,
     VOLT=Drivhus::MAX_PLANT_COUNT+5,
-    SUNRISE=Drivhus::MAX_PLANT_COUNT+6,
-    SUNSET=Drivhus::MAX_PLANT_COUNT+7
+    WATER_LOW_TRIGGER=Drivhus::MAX_PLANT_COUNT+6,
+    WATER_HIGH_TRIGGER=Drivhus::MAX_PLANT_COUNT+7,
+    WATER_VALVE=Drivhus::MAX_PLANT_COUNT+8,
+    SUNRISE=Drivhus::MAX_PLANT_COUNT+9,
+    SUNSET=Drivhus::MAX_PLANT_COUNT+10
   };
 
   virtual void onValueChanged(OnValueChangeListener::Type /*type*/, uint8_t /*plant_id*/) {}
@@ -59,6 +62,13 @@ public:
 
   virtual void onConfigChanged(OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id/sensor_id*/) {}
 };
+
+enum ValveStatus {
+  OPEN,
+  CLOSED,
+  NO_WATER
+};
+
 
 class Settings : public Component
 {
@@ -145,6 +155,9 @@ public:
   void setOutdoorHumidity(float value) {m_outdoor_humidity=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::OUTDOOR_HUMIDITY);}
   void setLight(float value) {m_light=value; notifyValueChangeListeners(OnValueChangeListener::Type::LIGHT);}
   void setVolt(float value) {m_volt=value; notifyValueChangeListeners(OnValueChangeListener::Type::VOLT);}
+  void setWaterLowTrigger(int value) {m_water_low_trigger=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_LOW_TRIGGER);}
+  void setWaterHighTrigger(int value) {m_water_high_trigger=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_HIGH_TRIGGER);}
+  void setWaterValveStatus(ValveStatus value) {m_water_valve_status=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_VALVE);}
   void setSunrise(float value) {m_sunrise=value; Serial.println("Setting sunrise"); notifyValueChangeListeners(OnValueChangeListener::Type::SUNRISE);}
   void setSunset(float value) {m_sunset=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNSET);}
   [[nodiscard]] float getPlantMoisture(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id) && getEnabled(plant_id) ? m_plants[plant_id-1].current_value : 0.0f;}
@@ -155,6 +168,9 @@ public:
   [[nodiscard]] float getOutdoorAsIndoorHumidity() const {return m_outdoor_as_indoor_humidity;}
   [[nodiscard]] float getLight() const {return m_light;}
   [[nodiscard]] float getVolt() const {return m_volt;}
+  [[nodiscard]] int   getWaterLowTrigger() const {return m_water_low_trigger;}
+  [[nodiscard]] int   getWaterHighTrigger() const {return m_water_high_trigger;}
+  [[nodiscard]] ValveStatus getWaterValveStatus() const {return m_water_valve_status;}
   [[nodiscard]] float getSunrise() const {return m_sunrise;}
   [[nodiscard]] float getSunset() const {return m_sunset;}
 private:
@@ -228,6 +244,9 @@ public:
   float m_outdoor_as_indoor_humidity;
   float m_light;
   float m_volt;
+  int m_water_low_trigger;
+  int m_water_high_trigger;
+  ValveStatus m_water_valve_status;
   float m_sunrise;
   float m_sunset;
 };
