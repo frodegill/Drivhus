@@ -69,7 +69,7 @@ void Drivhus::CD74HC4067::loop() {
   }
 }
 
-void Drivhus::CD74HC4067::onConfigChanged(Drivhus::OnConfigChangeListener::Type type, uint8_t /*plant_id*/) {
+void Drivhus::CD74HC4067::onConfigChanged(Drivhus::OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id*/) {
 }
 
 void Drivhus::CD74HC4067::activate(uint8_t plant_id) {

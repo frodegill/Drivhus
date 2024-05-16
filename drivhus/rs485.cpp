@@ -39,7 +39,6 @@ void Drivhus::RS485::loop() {
 
   if (m_previous_scanned_sensor_id!=UNDEFINED_ID ||
       (m_previous_complete_scan_time+SCAN_INTERVAL_MS)<current_time) {
-
       //Increase Sensor ID and check if we are done
       if (m_previous_scanned_sensor_id >= (m_performed_full_scan ? DRIVHUS_MAX_ID : MAX_ID)) {
         m_previous_scanned_sensor_id = UNDEFINED_ID;
@@ -51,7 +50,7 @@ void Drivhus::RS485::loop() {
         return;
       } else {
         if (m_previous_scanned_sensor_id == UNDEFINED_ID) {
-        Drivhus::getSettings()->setSensorScanStarted();
+          Drivhus::getSettings()->setSensorScanStarted();
           m_previous_scanned_sensor_id = m_performed_full_scan ? DRIVHUS_MIN_ID : MIN_ID;
         } else {
           m_previous_scanned_sensor_id++;
@@ -93,14 +92,6 @@ bool Drivhus::RS485::checkIfSensorIsPresent(uint8_t id) {
     is_present = m_modbus->readHoldingRegisters(id, 0x0001, tmp_holding_registers, 2);
     if (!is_present && m_modbus->getTimeoutFlag()) { //For whatever reason, the Honde Technology moisture sensors seems to fail first call, but then work if called a second time
       is_present = m_modbus->readHoldingRegisters(id, 0x0001, tmp_holding_registers, 2);
-#if 0
-      if (id>=1 && id<=4) {
-        Serial.print("Sensor ");
-        Serial.print(id);
-        Serial.print(" was retried, and ");
-        Serial.println(is_present ? "FOUND" : "NOT FOUND");
-      }
-#endif
     }
   }
   setSensorPresent(id, is_present);

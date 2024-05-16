@@ -9,6 +9,7 @@ namespace Drivhus {
 class Component {
 public:
   [[nodiscard]] virtual bool init() = 0;
+  [[nodiscard]] virtual bool postInit() {return true;}
   virtual void loop() = 0;
   virtual const char* getName() const = 0;
 };

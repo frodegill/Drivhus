@@ -1,4 +1,4 @@
-#undef GPIO_DEBUG
+//#define GPIO_DEBUG
 
 #ifdef GPIO_DEBUG
 # include <gpio_viewer.h>
@@ -28,7 +28,7 @@ std::vector<std::shared_ptr<Drivhus::Component>> g_components;
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting Drivhus");
+  Serial.println("\nStarting Drivhus");
 
   g_components.push_back(Drivhus::getLog());
   g_components.push_back(Drivhus::getSettings());
@@ -48,7 +48,16 @@ void setup() {
   Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, "Initialising components");
   for (auto component : g_components) {
     if (!component->init()) {
-      Serial.println("Setup failed");
+      Serial.print("Init ");
+      Serial.print(component->getName());
+      Serial.println(" FAILED");
+    }
+  }
+  for (auto component : g_components) {
+    if (!component->postInit()) {
+      Serial.print("PostInit ");
+      Serial.print(component->getName());
+      Serial.println(" FAILED");
     }
   }
 
@@ -56,6 +65,8 @@ void setup() {
   gpio_viewer.connectToWifi("<ssid>", "<password>");
   gpio_viewer.begin();
 #endif
+
+  Serial.println("Drivhus initialised");
 }
 
 void loop() {
