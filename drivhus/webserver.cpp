@@ -241,7 +241,8 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       value = Drivhus::getSettings()->getOutdoorHumidity();
       float value2 = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
       if (value<(m_humid[1]*0.99f) || value>(m_humid[1]*1.01f) ||
-          value2<(m_humid[2]*0.99f) || value2>(m_humid[2]*1.01f)) {
+          (value2==NAN && m_humid[2]!=NAN) || (value2!=NAN && m_humid[2]==NAN) ||
+          (value2!=NAN && (value2<(m_humid[2]*0.99f) || value2>(m_humid[2]*1.01f)))) {
         m_humid[1]=value;
         m_humid[2]=value2;
         notifyClients("OHUMID", generateOutdoorHumidityAsString().c_str());
@@ -478,7 +479,17 @@ void Drivhus::WebServer::updateGrowlightTime() {
 }
 
 std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const {
-  return Drivhus::getRS485()->isSensorPresent(sensor_id) ? Drivhus::floatToString(Drivhus::getSettings()->getPlantMoisture(sensor_id+1), 2) : "Not available";
+  if (!Drivhus::getRS485()->isSensorPresent(sensor_id)) {
+    return "Not available";
+  }
+  std::stringstream ss;
+  ss << Drivhus::floatToString(Drivhus::getSettings()->getPlantMoisture(sensor_id+1), 2);
+  ss << " (";
+  ss << Drivhus::floatToString(Drivhus::getSettings()->getWetValue(sensor_id+1), 2);
+  ss << " - ";
+  ss << Drivhus::floatToString(Drivhus::getSettings()->getDryValue(sensor_id+1), 2);
+  ss << ")";
+  return ss.str();
 }
 
 std::string Drivhus::WebServer::getUnusedSensorIdsAsString() const {
@@ -530,7 +541,10 @@ std::string Drivhus::WebServer::generateSensorSelectOptions(uint8_t sensor_id) c
 
 std::string Drivhus::WebServer::generateOutdoorHumidityAsString() const {
   std::stringstream ss;
-  ss << Drivhus::floatToString(m_humid[1], 1) << " %RH (" << Drivhus::floatToString(m_humid[2], 1) << " %RH)";
+  ss << Drivhus::floatToString(m_humid[1], 1) << " %RH";
+  if (m_humid[2] != NAN) {
+    ss << " (" << Drivhus::floatToString(m_humid[2], 1) << " %RH)";
+  }
   return ss.str();
 }
 
