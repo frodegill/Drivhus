@@ -269,3 +269,21 @@ void Drivhus::Settings::calculateOutdoorHumidityIndoor() {
     m_outdoor_as_indoor_humidity = 100.0f*std::exp((const_a*dew)/(const_b+dew)) / std::exp((const_a*m_indoor_temp)/(const_b+m_indoor_temp));
   }
 }
+
+void Drivhus::Settings::setPlantMoisture(uint8_t plant_id, float value) {
+  if (Drivhus::isValidPlantId(plant_id)) {
+    m_plants[plant_id-1].current_value=value;
+    notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_MOISTURE, plant_id);
+  }
+}
+
+void Drivhus::Settings::setEnabled(uint8_t plant_id, bool value) {
+  if (Drivhus::isValidPlantId(plant_id)) {
+    m_plants[plant_id-1].enabled=value;
+    notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_ENABLED, plant_id);
+  }
+
+  if (!value) {
+    setPlantMoisture(plant_id, 0.0);
+  }
+}
