@@ -14,6 +14,7 @@ class CD74HC4067 : public Component, public OnConfigChangeListener
 public:
   CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin);
   [[nodiscard]] virtual bool init() override;
+  [[nodiscard]] virtual bool postInit() override;
   virtual void loop() override;
   virtual const char* getName() const override {return "CD74HC4067";}
 
