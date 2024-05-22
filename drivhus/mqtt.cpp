@@ -6,6 +6,7 @@
 
 #include "global.h"
 #include "log.h"
+#include "network.h"
 #include "settings.h"
 
 
@@ -23,11 +24,13 @@ bool Drivhus::MQTT::init() {
   m_mqtt_client.setClient(m_esp_client);
   m_mqtt_client.setServer(Drivhus::getSettings()->getMQTTServername().c_str(), 1883);
   m_mqtt_client.setCallback(globalMQTTCallback);
+  Serial.println("MQTT initialised");
   return true;
 }
 
 void Drivhus::MQTT::loop() {
   if (!Drivhus::getSettings()->hasMQTTServer()) {
+    Serial.println("No MQTT server");
     return;
   }
 
@@ -43,14 +46,48 @@ void Drivhus::MQTT::loop() {
   if (m_reconnect_time!=0L && //Have connection succeeded?
       (m_reconnect_time+MQTT_CONNECTION_TIMEOUT_MS)>=current_time) {
     m_reconnect_time = 0L;
-    subscribe();
+    if (Drivhus::getNetwork()->isConnected()) {
+      subscribe();
+    }
   }
 
   publishPendingFields();
   m_mqtt_client.loop();
 }
 
-void Drivhus::MQTT::registerChange(Drivhus::OnValueChangeListener::Type type, unsigned long max_cache_time, uint8_t plant_id) {
+unsigned long Drivhus::MQTT::changeTypeToCacheTime(OnValueChangeListener::Type type) {
+  switch(type) {
+    case LIGHT:
+    case VOLT: return 30*1000;
+
+    case WATER_LOW_TRIGGER:
+    case WATER_HIGH_TRIGGER:
+    case WATER_VALVE:
+    case SUNRISE:
+    case SUNSET: return 1*1000;
+
+    default: return 15*1000;
+  };
+}
+
+std::string Drivhus::MQTT::errorStateMessage() {
+  switch(m_mqtt_client.state()) {
+    case (-4): return "the server didn't respond within the keepalive time";
+    case (-3): return "the network connection was broken";
+    case (-2): return "the network connection failed";
+    case (-1): return "the client is disconnected cleanly";
+    case 0: return "the client is connected";
+    case 1: return "the server doesn't support the requested version of MQTT";
+    case 2: return "the server rejected the client identifier";
+    case 3: return "the server was unable to accept the connection";
+    case 4: return "the username/password were rejected";
+    case 5: return "the client was not authorized to connect";
+    default: return "unknown error";
+  };
+}
+
+void Drivhus::MQTT::onValueChanged(OnValueChangeListener::Type type, uint8_t plant_id) {
+  unsigned long max_cache_time = changeTypeToCacheTime(type);
   if (type==Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE) {
     if (Drivhus::isValidPlantId(plant_id)) {
       m_changed_fields |= 1<<(Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE + plant_id - 1);
@@ -75,6 +112,9 @@ void Drivhus::MQTT::globalMQTTCallback(char* topic, uint8_t* payload, unsigned i
 
 void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
 {
+  Serial.print("MQTT callback for ");
+  Serial.println(topic);
+
   auto server_id = Drivhus::getSettings()->getMQTTServerId();
   if (0 != strncmp(server_id.c_str(), topic, server_id.length())) {
     Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Ignoring unrelated mqtt::callback ")+topic);
@@ -141,6 +181,7 @@ void Drivhus::MQTT::requestMQTTConnection() {
   if (m_mqtt_client.connected() || //Already connected
       !settings->hasMQTTServer() || //Not supposed to connect
       m_reconnect_time!=0L) { //Has a pending connection attempt
+    Serial.print("MQTT request not needed");
     return;
   }
 
@@ -149,12 +190,25 @@ void Drivhus::MQTT::requestMQTTConnection() {
 }
 
 void Drivhus::MQTT::log(const std::string& msg) {
+  Serial.print("MQTT log");
   //TODO
 }
 
 void Drivhus::MQTT::subscribe() {
-  if (!m_mqtt_client.subscribe((Drivhus::getSettings()->getMQTTServerId()+"/#").c_str())) {
-    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_ERROR, "MQTT topics subscribed with error");
+  if (!Drivhus::getNetwork()->isConnected()) {
+    Serial.println("Network not connected. Delaying MQTT subscription");
+    return;
+  }
+
+  Serial.print("MQTT: Subscribing to ");
+  Serial.print(Drivhus::getSettings()->getMQTTServername().c_str());
+  Serial.print(":");
+  Serial.print(Drivhus::getSettings()->getMQTTPort());
+  Serial.print(" topic ");
+  Serial.println((Drivhus::getSettings()->getMQTTServerId()+"#").c_str());
+
+  if (!m_mqtt_client.subscribe((Drivhus::getSettings()->getMQTTServerId()+"#").c_str())) {
+    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_ERROR, (std::string("MQTT topics subscribed with error: ")+errorStateMessage()).c_str());
     m_reconnect_time = millis(); //To request a new subscribe
   }
 }
@@ -199,6 +253,8 @@ void Drivhus::MQTT::publishPendingFields() {
     }
   }
 
+  Serial.print("Publishing ");
+  Serial.println(mqtt_packet.c_str());
   if (!m_mqtt_client.publish("topic", mqtt_packet.c_str(), true)) {
     Serial.println("Publishing MQTT packet failed.");
   }

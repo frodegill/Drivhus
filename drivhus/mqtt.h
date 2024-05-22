@@ -27,18 +27,12 @@ public:
   virtual void loop() override;
   virtual const char* getName() const override {return "MQTT";}
 
-protected:
-  virtual void onPlantMoistureChanged(uint8_t plant_id, float) {registerChange(Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE, 15*1000, plant_id);}
-  virtual void onIndoorTempChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::INDOOR_TEMP, 15*1000);}
-  virtual void onIndoorHumidityChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY, 15*1000);}
-  virtual void onOutdoorTempChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP, 15*1000);}
-  virtual void onOutdoorHumidityChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY, 15*1000);}
-  virtual void onLightChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::LIGHT, 30*1000);}
-  virtual void onVoltChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::VOLT, 30*1000);}
-  virtual void onSunriseChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::SUNRISE, 1*1000);}
-  virtual void onSunsetChanged(float) {registerChange(Drivhus::OnValueChangeListener::Type::SUNSET, 1*1000);}
 private:
-  void registerChange(Drivhus::OnValueChangeListener::Type type, unsigned long max_cache_time, uint8_t plant_id=0);
+  unsigned long changeTypeToCacheTime(OnValueChangeListener::Type type);
+  std::string errorStateMessage();
+
+protected:
+  virtual void onValueChanged(OnValueChangeListener::Type type, uint8_t plant_id) override;
 
 public:
   static void globalMQTTCallback(char* topic, uint8_t* payload, unsigned int length);
