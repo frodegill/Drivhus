@@ -18,6 +18,7 @@
 #include "rs485.h"
 #include "settings.h"
 #include "volt.h"
+#include "webserver.h"
 #include "waterlevel.h"
 
 #ifdef GPIO_DEBUG
@@ -41,6 +42,7 @@ void setup() {
   g_components.push_back(Drivhus::getVolt());
   g_components.push_back(Drivhus::getNetwork());
   g_components.push_back(Drivhus::getNTP());
+  g_components.push_back(Drivhus::getWebServer());
   g_components.push_back(Drivhus::getRS485());
   g_components.push_back(Drivhus::getWaterlevel());
   g_components.push_back(Drivhus::getMQTT());

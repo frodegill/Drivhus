@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "component.h"
-#include "webserver.h"
 
 
 namespace Drivhus {
@@ -29,8 +28,7 @@ public:
   virtual void loop() override;
   virtual const char* getName() const override {return "Network";}
 
-  [[nodiscard]] bool isWiFiConnected();
-  [[nodiscard]] std::shared_ptr<WebServer> getWebServer() const {return m_webserver;}
+  [[nodiscard]] bool isConnected() {return m_wifi_disconnected_since==0L;}
 
 private:
   void activateWiFiStation();
@@ -40,7 +38,6 @@ private:
 public:
   DNSServer m_dns_server;
   std::shared_ptr<IPAddress> m_ap_ip;
-  std::shared_ptr<WebServer> m_webserver;
 
   unsigned long m_wifi_disconnected_since;
   unsigned long m_wifi_accesspoint_mode_since;

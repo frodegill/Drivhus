@@ -92,6 +92,9 @@ class Network;
 class NTP;
 [[nodiscard]] std::shared_ptr<NTP> getNTP();
 
+class WebServer;
+[[nodiscard]] std::shared_ptr<WebServer> getWebServer();
+
 class Volt; //Volt sensor
 [[nodiscard]] std::shared_ptr<Volt> getVolt();
 

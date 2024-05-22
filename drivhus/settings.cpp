@@ -5,6 +5,7 @@
 
 #include "mqtt.h"
 #include "network.h"
+#include "webserver.h"
 
 
 Drivhus::Settings::Settings(uint8_t pin)
@@ -55,7 +56,7 @@ void Drivhus::Settings::loop() {
   
   bool previous_setup_mode = m_in_setup_mode;
   if (isInSetupMode() != previous_setup_mode) {
-    Drivhus::getNetwork()->getWebServer()->updateSetupMode();
+    Drivhus::getWebServer()->updateSetupMode();
   }
 
   checkIfSettingsShouldBeFlushed();
@@ -255,7 +256,7 @@ void Drivhus::Settings::flushSettings() {
 
     std::stringstream ss;
     ss << "Flushing settings " << (result ? "SUCCEEDED" : "FAILED");
-    Drivhus::getNetwork()->getWebServer()->addWarningMessage(ss.str());
+    Drivhus::getWebServer()->addWarningMessage(ss.str());
   }
 }
 

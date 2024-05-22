@@ -12,12 +12,13 @@
 #include <mutex>
 #include <set>
 
+#include "component.h"
 #include "settings.h"
 
 
 namespace Drivhus {
 
-class WebServer : public OnValueChangeListener, public OnConfigChangeListener
+class WebServer : public Component, public OnValueChangeListener, public OnConfigChangeListener
 {
 public:
   static constexpr unsigned long WARNING_MESSAG_DELAY_MS = 5000L;
@@ -26,8 +27,9 @@ public:
 
 public:
   WebServer();
-  [[nodiscard]] bool init();
-  void loop();
+  [[nodiscard]] virtual bool init() override;
+  virtual void loop() override;
+  virtual const char* getName() const override {return "WebServer";}
 
   static void onEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
 

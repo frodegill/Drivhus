@@ -1,7 +1,9 @@
 #include "network.h"
 
 #include "global.h"
+#include "mqtt.h"
 #include "settings.h"
+#include "webserver.h"
 
 
 Drivhus::Network::Network()
@@ -10,16 +12,23 @@ Drivhus::Network::Network()
   m_wifi_accesspoint_mode_since(0L),
   m_is_in_accesspoint_mode(false) {
   m_ap_ip = std::make_shared<IPAddress>(192, 168, 4, 1);
-  m_webserver = std::make_shared<WebServer>();
 }
 
 bool Drivhus::Network::init() {
+#if 0
+  WiFi.disconnect(true, true);
+  WiFi.mode(WIFI_OFF);
+  delay(1000);
+  WiFi.persistent(false);
+  WiFi.setSleep(true);
+  WiFi.setAutoReconnect(true);
+#endif
   if (Drivhus::getSettings()->isInSetupMode()) {
     activateWiFiAccessPoint();
   } else {
     activateWiFiStation();
   }
-  return m_webserver->init();
+  return true;
 }
 
 void Drivhus::Network::loop() {
@@ -35,7 +44,7 @@ void Drivhus::Network::loop() {
     if (Drivhus::getSettings()->isInSetupMode()) {
       Serial.println("Activating AP mode for Setup");
       activateWiFiAccessPoint();
-    } else if (!isWiFiConnected()) {
+    } else if (!WiFi.isConnected()) {
       if (m_wifi_disconnected_since == 0L) {
         Serial.println("WiFi is in Disconnected state");
         m_wifi_disconnected_since = current_time;
@@ -48,14 +57,16 @@ void Drivhus::Network::loop() {
       }
     } else {
       if (m_wifi_disconnected_since != 0L) {
-        Serial.println("WiFi is in Connected state");
+        Serial.print("WiFi is in Connected state. Got IP ");
+        Serial.println(WiFi.localIP());
         m_wifi_disconnected_since = 0L;
+        Drivhus::getMQTT()->requestMQTTConnection();
       }
     }
   } else {
     if (!Drivhus::getSettings()->isInSetupMode() &&
         !Drivhus::getSettings()->getSSID().empty() &&
-        m_webserver->wsClientCount()==0 &&
+        Drivhus::getWebServer()->wsClientCount()==0 &&
         (m_wifi_accesspoint_mode_since+MAX_AP_WITHOUT_CLIENTS_DURATION_MS)<current_time) {
       Serial.println("Switching back to normal WiFi mode");
       activateWiFiStation();
@@ -63,12 +74,6 @@ void Drivhus::Network::loop() {
 
     m_dns_server.processNextRequest(); //Route everything to 192.168.4.1
   }
-
-  m_webserver->loop();
-}
-
-bool Drivhus::Network::isWiFiConnected() {
-  return WiFi.isConnected();
 }
 
 void Drivhus::Network::activateWiFiStation() {
@@ -76,7 +81,8 @@ void Drivhus::Network::activateWiFiStation() {
     Serial.println("No SSID configured for STA");
     activateWiFiAccessPoint();
   } else {
-    Serial.println("activateWiFiStation");
+    Serial.print("activateWiFiStation to ");
+    Serial.println(Drivhus::getSettings()->getSSID().c_str());
     deactivateWiFi();
     m_dns_server.stop();
     WiFi.enableAP(false);

@@ -21,6 +21,7 @@
 #include "settings.h"
 #include "volt.h"
 #include "waterlevel.h"
+#include "webserver.h"
 
 
 std::shared_ptr<Drivhus::CD74HC4067> g_cd74hc4067;
@@ -102,6 +103,14 @@ std::shared_ptr<Drivhus::NTP> g_ntp;
     g_ntp = std::make_shared<Drivhus::NTP>(Timezone(tz->dst, tz->regular));
   }
   return g_ntp;
+}
+
+std::shared_ptr<Drivhus::WebServer> g_webserver;
+[[nodiscard]] std::shared_ptr<Drivhus::WebServer> Drivhus::getWebServer() {
+  if (!g_webserver) {
+    g_webserver = std::make_shared<Drivhus::WebServer>();
+  }
+  return g_webserver;
 }
 
 std::shared_ptr<Drivhus::RS485> g_rs485;

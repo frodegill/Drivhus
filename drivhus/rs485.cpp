@@ -5,6 +5,7 @@
 #include "global.h"
 
 #include "network.h"
+#include "webserver.h"
 
 
 Drivhus::RS485::RS485(uint8_t rx_pin, uint8_t tx_pin, uint8_t enable_pin)
@@ -118,7 +119,7 @@ void Drivhus::RS485::checkIfSensorsShouldBeReassigned() {
 
     std::stringstream ss;
     ss << "Reassigning sensor " << work.first << " to " << work.second << (result ? "SUCCEEDED" : "FAILED");
-    Drivhus::getNetwork()->getWebServer()->addWarningMessage(ss.str());
+    Drivhus::getWebServer()->addWarningMessage(ss.str());
   }
 }
 

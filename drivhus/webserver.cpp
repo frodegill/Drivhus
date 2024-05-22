@@ -133,7 +133,8 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
 
 
 Drivhus::WebServer::WebServer()
-: Drivhus::OnValueChangeListener(),
+: Drivhus::Component(),
+  Drivhus::OnValueChangeListener(),
   Drivhus::OnConfigChangeListener(),
   m_is_showing_setup(false),
   m_warning_message_time(0L),
@@ -330,7 +331,7 @@ void Drivhus::WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t
       }
       Drivhus::getSettings()->setShouldFlushSettings();
     } else if (len>=2 && std::strncmp("TR", data_str, 2)==0) {
-      Drivhus::getNetwork()->getWebServer()->activateRelayTests();
+      Drivhus::getWebServer()->activateRelayTests();
     } else if (len>=(3+2+2) && std::strncmp("NSI", data_str, 3)==0) {
       std::string s(data_str+3, 4);
       unsigned long value = std::stoul(s, nullptr, 16);
@@ -346,33 +347,33 @@ void Drivhus::WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t
 }
 
 void Drivhus::WebServer::notifyClients(const std::string& key, const std::string& data) {
-  Drivhus::getNetwork()->getWebServer()->textAll(key, data);
+  Drivhus::getWebServer()->textAll(key, data);
 }
 
 String Drivhus::WebServer::processor(const String& var){
   if (var == "SHOW_SETUP") {
     return Drivhus::getSettings()->isInSetupMode() ? "" : "hidden";
   } else if (var == "SIX") {
-    return String(Drivhus::getNetwork()->getWebServer()->getUnusedSensorIdsAsString().c_str());
+    return String(Drivhus::getWebServer()->getUnusedSensorIdsAsString().c_str());
   } else if (var == "NIX") {
-    uint8_t sensor_id = Drivhus::getNetwork()->getWebServer()->getUnusedSensorId();
-    return String(Drivhus::getNetwork()->getWebServer()->generateSensorSelectOptions(sensor_id).c_str());
+    uint8_t sensor_id = Drivhus::getWebServer()->getUnusedSensorId();
+    return String(Drivhus::getWebServer()->generateSensorSelectOptions(sensor_id).c_str());
   } else if (var.startsWith("SV")) {
     uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
-    return String(Drivhus::getNetwork()->getWebServer()->getSensorValueAsString(sensor_id).c_str());
+    return String(Drivhus::getWebServer()->getSensorValueAsString(sensor_id).c_str());
   } else if (var.startsWith("NS")) {
     uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
-    return String(Drivhus::getNetwork()->getWebServer()->generateSensorSelectOptions(sensor_id).c_str());
+    return String(Drivhus::getWebServer()->generateSensorSelectOptions(sensor_id).c_str());
   } else if (var == "ITEMP") {
-    return String(Drivhus::getNetwork()->getWebServer()->getIndoorTemp(), 1);
+    return String(Drivhus::getWebServer()->getIndoorTemp(), 1);
   } else if (var == "IHUMID") {
-    return String(Drivhus::getNetwork()->getWebServer()->getIndoorHumid(), 1);
+    return String(Drivhus::getWebServer()->getIndoorHumid(), 1);
   } else if (var == "ILIGHT") {
-    return String(Drivhus::getNetwork()->getWebServer()->getLight(), 1);
+    return String(Drivhus::getWebServer()->getLight(), 1);
   } else if (var == "OTEMP") {
-    return String(Drivhus::getNetwork()->getWebServer()->getOutdoorTemp(), 1);
+    return String(Drivhus::getWebServer()->getOutdoorTemp(), 1);
   } else if (var == "OHUMID") {
-    return String(Drivhus::getNetwork()->getWebServer()->generateOutdoorHumidityAsString().c_str());
+    return String(Drivhus::getWebServer()->generateOutdoorHumidityAsString().c_str());
   } else if (var == "WLL") {
     return String(Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
   } else if (var == "WLH") {
@@ -380,11 +381,11 @@ String Drivhus::WebServer::processor(const String& var){
   } else if (var == "WV") {
     return String(Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
   } else if (var == "VOLT") {
-    return String(Drivhus::getNetwork()->getWebServer()->getVolt(), 2);
+    return String(Drivhus::getWebServer()->getVolt(), 2);
   } else if (var == "VM") {
-    return String(Drivhus::getNetwork()->getWebServer()->generateVoltMultiplierCalibration().c_str());
+    return String(Drivhus::getWebServer()->generateVoltMultiplierCalibration().c_str());
   } else if (var == "GT") {
-    return String(Drivhus::getNetwork()->getWebServer()->getGrowlightTime().c_str());
+    return String(Drivhus::getWebServer()->getGrowlightTime().c_str());
   } else if (Drivhus::getSettings()->isInSetupMode()) {
     if (var == "SSID") {
       return String(Drivhus::getSettings()->getSSID().c_str());
@@ -401,7 +402,7 @@ String Drivhus::WebServer::processor(const String& var){
     } else if (var == "MQTT_PASSWORD") {
       return String(Drivhus::getSettings()->getMQTTPassword().c_str());
     } else if (var == "TZO") {
-      return String(Drivhus::getNetwork()->getWebServer()->generateTimezoneSelectOptions().c_str());
+      return String(Drivhus::getWebServer()->generateTimezoneSelectOptions().c_str());
     } else if (var == "EM_LATITUDE") {
       return String(Drivhus::getSettings()->getEmulateLatitude());
     } else if (var == "EM_LONGITUDE") {

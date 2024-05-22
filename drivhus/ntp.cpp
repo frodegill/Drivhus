@@ -37,7 +37,7 @@ void Drivhus::NTP::loop() {
   }
 
   if (!m_callbacks_are_set) {
-    if (Drivhus::getNetwork()->isWiFiConnected()) { //Set up NTP callbacks
+    if (Drivhus::getNetwork()->isConnected()) { //Set up NTP callbacks
       setSyncProvider(NTP::requestNTPUTCTime);
       setSyncInterval(NTP::NTP_SYNC_INTERVAL_SEC);
       m_callbacks_are_set = true;
