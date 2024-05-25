@@ -202,22 +202,6 @@ void Drivhus::WebServer::onEvent([[maybe_unused]] AsyncWebSocket* server, [[mayb
   }
 }
 
-void Drivhus::WebServer::updateSetupMode() {
-  bool tmp = Drivhus::getSettings()->isInSetupMode();
-  if (m_is_showing_setup!=tmp) {
-    notifyClients("SHOW_SETUP", tmp ? "" : "hidden");
-    m_is_showing_setup = tmp;
-    for (uint8_t sensor_id=RS485::DRIVHUS_MIN_ID; sensor_id<=RS485::DRIVHUS_MAX_ID; sensor_id++) {
-      updateNewSensorIdButtons(sensor_id);
-    }
-    uint8_t unused_sensor_id = getUnusedSensorId();
-    if (unused_sensor_id != RS485::UNDEFINED_ID) {
-      updateNewSensorIdButtons(unused_sensor_id);
-    }
-    notifyClients("VM", generateVoltMultiplierCalibration());
-  } 
-}
-
 void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
   switch(type) {
     case INDOOR_TEMP: //[[fallthrough]]
@@ -294,6 +278,23 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
 
 void Drivhus::WebServer::onConfigChanged(Drivhus::OnConfigChangeListener::Type type, uint8_t id) {
   switch(type) {
+    case SETUP_MODE:
+      {
+        bool tmp = Drivhus::getSettings()->getIsInSetupMode();
+        if (m_is_showing_setup!=tmp) {
+          m_is_showing_setup = tmp;
+          notifyClients("SHOW_SETUP", m_is_showing_setup ? "" : "hidden");
+          for (uint8_t sensor_id=RS485::DRIVHUS_MIN_ID; sensor_id<=RS485::DRIVHUS_MAX_ID; sensor_id++) {
+            updateNewSensorIdButtons(sensor_id);
+          }
+          uint8_t unused_sensor_id = getUnusedSensorId();
+          if (unused_sensor_id != RS485::UNDEFINED_ID) {
+            updateNewSensorIdButtons(unused_sensor_id);
+          }
+          notifyClients("VM", generateVoltMultiplierCalibration());
+        }
+      }
+      break;
     case SENSOR_SCAN_ENDED:
       notifyClients("CSI", "-");
       break;
@@ -352,7 +353,7 @@ void Drivhus::WebServer::notifyClients(const std::string& key, const std::string
 
 String Drivhus::WebServer::processor(const String& var){
   if (var == "SHOW_SETUP") {
-    return Drivhus::getSettings()->isInSetupMode() ? "" : "hidden";
+    return Drivhus::getSettings()->getIsInSetupMode() ? "" : "hidden";
   } else if (var == "SIX") {
     return String(Drivhus::getWebServer()->getUnusedSensorIdsAsString().c_str());
   } else if (var == "NIX") {
@@ -386,7 +387,7 @@ String Drivhus::WebServer::processor(const String& var){
     return String(Drivhus::getWebServer()->generateVoltMultiplierCalibration().c_str());
   } else if (var == "GT") {
     return String(Drivhus::getWebServer()->getGrowlightTime().c_str());
-  } else if (Drivhus::getSettings()->isInSetupMode()) {
+  } else if (Drivhus::getSettings()->getIsInSetupMode()) {
     if (var == "SSID") {
       return String(Drivhus::getSettings()->getSSID().c_str());
     } else if (var == "SSID_PASSWORD") {
@@ -421,8 +422,6 @@ void Drivhus::WebServer::textAll(const std::string& key, const std::string& data
 }
 
 void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
-  updateSetupMode();
-
   bool present = Drivhus::getRS485()->isSensorPresent(sensor_id);
   if (present && m_present_sensors.find(sensor_id) == m_present_sensors.end()) {
     m_present_sensors.emplace(sensor_id);
@@ -443,14 +442,14 @@ void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
 
 void Drivhus::WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
   if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
-    if (!Drivhus::getSettings()->isInSetupMode() || !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
+    if (!Drivhus::getSettings()->getIsInSetupMode() || !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
       notifyClients(std::string("NS")+Drivhus::uint8ToHex(sensor_id), "");
     } else {
       notifyClients(std::string("NS")+Drivhus::uint8ToHex(sensor_id), generateSensorSelectOptions(sensor_id));
     }
   } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID) {
     uint8_t sensor_id = getUnusedSensorId();
-    if (!Drivhus::getSettings()->isInSetupMode() || sensor_id == RS485::UNDEFINED_ID) {
+    if (!Drivhus::getSettings()->getIsInSetupMode() || sensor_id == RS485::UNDEFINED_ID) {
       notifyClients("NIX", "");
     } else {
       notifyClients("NIX", generateSensorSelectOptions(sensor_id));
@@ -523,7 +522,7 @@ uint8_t Drivhus::WebServer::getUnusedSensorId() const {
 }
 
 std::string Drivhus::WebServer::generateSensorSelectOptions(uint8_t sensor_id) const {
-  if (!Drivhus::getSettings()->isInSetupMode() ||
+  if (!Drivhus::getSettings()->getIsInSetupMode() ||
       sensor_id<RS485::MIN_ID || sensor_id>RS485::MAX_ID ||
       !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
     return "";
@@ -550,7 +549,7 @@ std::string Drivhus::WebServer::generateOutdoorHumidityAsString() const {
 }
 
 std::string Drivhus::WebServer::generateVoltMultiplierCalibration() const {
-  if (!Drivhus::getSettings()->isInSetupMode()) {
+  if (!Drivhus::getSettings()->getIsInSetupMode()) {
     return "";
   }
 

@@ -38,8 +38,6 @@ protected:
   virtual void onConfigChanged(OnConfigChangeListener::Type type, uint8_t id) override;
 
 public:
-  void updateSetupMode();
-
   size_t wsClientCount() const {return m_ws->count();}
 
   void addWarningMessage(const std::string& msg);

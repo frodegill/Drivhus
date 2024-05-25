@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <vector>
+#include <tuple>
 
 #include "mqtt.h"
 #include "network.h"
@@ -44,7 +45,7 @@ bool Drivhus::Settings::init() {
                VOLT_MULTIPLIER_LENGTH+1 + MAX_TIMEZONE_LENGTH+1 + MAX_EMULATE_LATLONG_LENGTH+1 + MAX_EMULATE_LATLONG_LENGTH+1);
 
   readPersistentParams();
-  m_in_setup_mode = isInSetupMode(true);
+  setIsInSetupMode(digitalRead(m_pin)==LOW);
   return true;
 }
 
@@ -54,22 +55,9 @@ void Drivhus::Settings::loop() {
     m_previous_setup_pin_poll_time = current_time;
   }
   
-  bool previous_setup_mode = m_in_setup_mode;
-  if (isInSetupMode() != previous_setup_mode) {
-    Drivhus::getWebServer()->updateSetupMode();
-  }
+  std::ignore = getIsInSetupMode();
 
   checkIfSettingsShouldBeFlushed();
-}
-
-bool Drivhus::Settings::isInSetupMode(bool force_read) {
-  const unsigned long current_time = millis();
-  if (force_read ||
-      (m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
-    m_previous_setup_pin_poll_time = current_time;
-    m_in_setup_mode = digitalRead(m_pin)==LOW;
-  }
-  return m_in_setup_mode;
 }
 
 void Drivhus::Settings::addValueChangeListener(Drivhus::OnValueChangeListener* listener) {
@@ -248,7 +236,7 @@ void Drivhus::Settings::flushSettings() {
   const std::lock_guard<std::recursive_mutex> lock(m_should_flush_settings_mutex);
   m_should_flush_settings = false;
 
-  if (isInSetupMode() && m_settings_changed) {
+  if (getIsInSetupMode() && m_settings_changed) {
     bool result = writePersistentParams();
     if (result) {
       m_settings_changed = false;
@@ -272,14 +260,14 @@ void Drivhus::Settings::calculateOutdoorHumidityIndoor() {
 }
 
 void Drivhus::Settings::setPlantMoisture(uint8_t plant_id, float value) {
-  if (Drivhus::isValidPlantId(plant_id)) {
+  if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].current_value!=value) {
     m_plants[plant_id-1].current_value=value;
     notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_MOISTURE, plant_id);
   }
 }
 
 void Drivhus::Settings::setEnabled(uint8_t plant_id, bool value) {
-  if (Drivhus::isValidPlantId(plant_id)) {
+  if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].enabled!=value) {
     m_plants[plant_id-1].enabled=value;
     notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_ENABLED, plant_id);
   }
@@ -287,4 +275,16 @@ void Drivhus::Settings::setEnabled(uint8_t plant_id, bool value) {
   if (!value) {
     setPlantMoisture(plant_id, 0.0);
   }
+}
+
+bool Drivhus::Settings::getIsInSetupMode() {
+  const unsigned long current_time = millis();
+  if ((m_previous_setup_pin_poll_time+SETUP_PIN_POLL_INTERVAL_MS)<current_time) {
+    m_previous_setup_pin_poll_time = current_time;
+    bool new_setup_mode = digitalRead(m_pin)==LOW;
+    if (m_in_setup_mode != new_setup_mode) {
+      setIsInSetupMode(new_setup_mode);
+    }
+  }
+  return m_in_setup_mode;
 }

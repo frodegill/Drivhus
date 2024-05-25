@@ -23,7 +23,7 @@ bool Drivhus::Network::init() {
   WiFi.setSleep(true);
   WiFi.setAutoReconnect(true);
 #endif
-  if (Drivhus::getSettings()->isInSetupMode()) {
+  if (Drivhus::getSettings()->getIsInSetupMode()) {
     activateWiFiAccessPoint();
   } else {
     activateWiFiStation();
@@ -41,7 +41,7 @@ void Drivhus::Network::loop() {
   }
 
   if (!m_is_in_accesspoint_mode) {
-    if (Drivhus::getSettings()->isInSetupMode()) {
+    if (Drivhus::getSettings()->getIsInSetupMode()) {
       Serial.println("Activating AP mode for Setup");
       activateWiFiAccessPoint();
     } else if (!WiFi.isConnected()) {
@@ -64,7 +64,7 @@ void Drivhus::Network::loop() {
       }
     }
   } else {
-    if (!Drivhus::getSettings()->isInSetupMode() &&
+    if (!Drivhus::getSettings()->getIsInSetupMode() &&
         !Drivhus::getSettings()->getSSID().empty() &&
         Drivhus::getWebServer()->wsClientCount()==0 &&
         (m_wifi_accesspoint_mode_since+MAX_AP_WITHOUT_CLIENTS_DURATION_MS)<current_time) {
