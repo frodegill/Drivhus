@@ -52,7 +52,10 @@ void Drivhus::MQTT::loop() {
   }
 
   publishPendingFields();
-  m_mqtt_client.loop();
+
+  if (m_esp_client.connected()) {
+    m_mqtt_client.loop();
+  }
 }
 
 unsigned long Drivhus::MQTT::changeTypeToCacheTime(OnValueChangeListener::Type type) {
