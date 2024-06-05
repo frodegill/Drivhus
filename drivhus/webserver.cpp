@@ -411,8 +411,7 @@ String Drivhus::WebServer::processor(const String& var){
     }
   }
 #if 0
-  Serial.print("Unknown PROCESSOR ");
-  Serial.println(var);
+  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Unknown PROCESSOR ")+var);
 #endif
   return String();
 }
@@ -458,7 +457,6 @@ void Drivhus::WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
 }
 
 void Drivhus::WebServer::updateGrowlightTime() {
-  Serial.println("updateGrowlightTime");
   uint8_t from_hour = static_cast<uint8_t>(m_sunrise/60);
   uint8_t from_minutes = static_cast<uint8_t>(m_sunrise - from_hour*60);
   uint8_t to_hour = static_cast<uint8_t>(m_sunset/60);
@@ -474,7 +472,6 @@ void Drivhus::WebServer::updateGrowlightTime() {
   ss << std::setw(2) << std::setfill('0') << std::to_string(to_minutes);
 
   m_growlight_time = ss.str();
-  Serial.println(m_growlight_time.c_str());
   notifyClients("GT", m_growlight_time);
 }
 

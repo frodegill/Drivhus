@@ -28,7 +28,7 @@
 std::vector<std::shared_ptr<Drivhus::Component>> g_components;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); //We cannot rely on getLog()->print(...) until after postInit is completed
   Serial.println("\nStarting Drivhus");
 
   g_components.push_back(Drivhus::getLog());
@@ -47,7 +47,7 @@ void setup() {
   g_components.push_back(Drivhus::getWaterlevel());
   g_components.push_back(Drivhus::getMQTT());
 
-  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, "Initialising components");
+  Serial.println("Initialising components");
   for (auto component : g_components) {
     if (!component->init()) {
       Serial.print("Init ");
@@ -68,7 +68,7 @@ void setup() {
   gpio_viewer.begin();
 #endif
 
-  Serial.println("Drivhus initialised");
+  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Drivhus initialised"));
 }
 
 void loop() {

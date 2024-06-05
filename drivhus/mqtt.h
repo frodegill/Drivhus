@@ -47,6 +47,7 @@ private:
   void subscribe();
   void publishPendingFields();
   void appendField(std::stringstream& stream, bool& first, std::string&& field, float value, uint8_t precision);
+  void appendField(std::stringstream& stream, bool& first, std::string&& field, int value);
 
 public:
   WiFiClient m_esp_client;

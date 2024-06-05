@@ -1,5 +1,7 @@
 #include "waterlevel.h"
 
+#include "log.h"
+
 
 Drivhus::Waterlevel::Waterlevel(uint8_t low_pin, uint8_t high_pin, uint8_t valve_pin)
 : Drivhus::Component(),
@@ -41,14 +43,14 @@ void Drivhus::Waterlevel::loop() {
   switch(Drivhus::getSettings()->getWaterValveStatus()) {
     case ValveStatus::NO_WATER:
       if ((m_previous_valve_event_time+VALVE_FORCED_CLOSE_TIMEOUT_MS)<current_time) { //If grace period is over, open valve and see if there is water now
-        Serial.println("Water valve grace period passed");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Water valve grace period passed"));
         m_previous_valve_event_time = millis();
         Drivhus::getSettings()->setWaterValveStatus(Drivhus::ValveStatus::OPEN);
       }
       break;
     case ValveStatus::OPEN:
       if ((m_previous_valve_event_time+MAXIMUM_VALVE_OPEN_MS)<current_time) { //Valve have been open too long. No more reservoir water?
-        Serial.println("Water valve open too long");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Water valve open too long"));
         m_previous_valve_event_time = millis();
         Drivhus::getSettings()->setWaterValveStatus(Drivhus::ValveStatus::NO_WATER);
       }
@@ -63,7 +65,7 @@ void Drivhus::Waterlevel::onValueChanged(Drivhus::OnValueChangeListener::Type ty
     case WATER_LOW_TRIGGER: {
       if (Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::CLOSED &&
           Drivhus::getSettings()->getWaterLowTrigger()==HIGH) {
-        Serial.println("Low trigger is HIGH. Opening water valve");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Low trigger is HIGH. Opening water valve"));
         m_previous_valve_event_time = millis();
         Drivhus::getSettings()->setWaterValveStatus(Drivhus::ValveStatus::OPEN);
       }
@@ -72,7 +74,7 @@ void Drivhus::Waterlevel::onValueChanged(Drivhus::OnValueChangeListener::Type ty
     case WATER_HIGH_TRIGGER: {
       if (Drivhus::getSettings()->getWaterValveStatus()!=Drivhus::ValveStatus::CLOSED &&
           Drivhus::getSettings()->getWaterHighTrigger()==LOW) {
-        Serial.println("High trigger is LOW. Closing water valve");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("High trigger is LOW. Closing water valve"));
         m_previous_valve_event_time = millis();
         Drivhus::getSettings()->setWaterValveStatus(Drivhus::ValveStatus::CLOSED);
       }
@@ -80,8 +82,7 @@ void Drivhus::Waterlevel::onValueChanged(Drivhus::OnValueChangeListener::Type ty
     }
     case WATER_VALVE: {
       ValveStatus status = Drivhus::getSettings()->getWaterValveStatus();
-      Serial.print(status==Drivhus::ValveStatus::OPEN ? "Opening" : "Closing");
-      Serial.println(" water valve");
+      Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string(status==Drivhus::ValveStatus::OPEN ? "Opening water valve" : "Closing water valve"));
       digitalWrite(m_valve_pin, status==Drivhus::ValveStatus::OPEN ? HIGH : LOW);
       break;
     }

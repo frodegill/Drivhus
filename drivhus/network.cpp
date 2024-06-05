@@ -1,6 +1,7 @@
 #include "network.h"
 
 #include "global.h"
+#include "log.h"
 #include "mqtt.h"
 #include "settings.h"
 #include "webserver.h"
@@ -42,23 +43,22 @@ void Drivhus::Network::loop() {
 
   if (!m_is_in_accesspoint_mode) {
     if (Drivhus::getSettings()->getIsInSetupMode()) {
-      Serial.println("Activating AP mode for Setup");
+      Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Activating AP mode for Setup"));
       activateWiFiAccessPoint();
     } else if (!WiFi.isConnected()) {
       if (m_wifi_disconnected_since == 0L) {
-        Serial.println("WiFi is in Disconnected state");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("WiFi is in Disconnected state"));
         m_wifi_disconnected_since = current_time;
       }
 
       //If WiFi fails too long, switch to AccessPoint mode
       if (Drivhus::getSettings()->getSSID().empty() || (m_wifi_disconnected_since+MAX_WIFI_RECOVERY_DURATION_MS)<current_time) {
-        Serial.println("WiFi couldn't connect. Activating AP mode");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("WiFi couldn't connect. Activating AP mode"));
         activateWiFiAccessPoint();
       }
     } else {
       if (m_wifi_disconnected_since != 0L) {
-        Serial.print("WiFi is in Connected state. Got IP ");
-        Serial.println(WiFi.localIP());
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("WiFi is in Connected state. Got IP ")+WiFi.localIP().toString().c_str());
         m_wifi_disconnected_since = 0L;
         Drivhus::getMQTT()->requestMQTTConnection();
       }
@@ -68,7 +68,7 @@ void Drivhus::Network::loop() {
         !Drivhus::getSettings()->getSSID().empty() &&
         Drivhus::getWebServer()->wsClientCount()==0 &&
         (m_wifi_accesspoint_mode_since+MAX_AP_WITHOUT_CLIENTS_DURATION_MS)<current_time) {
-      Serial.println("Switching back to normal WiFi mode");
+      Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Switching back to normal WiFi mode"));
       activateWiFiStation();
     }
 
@@ -78,11 +78,10 @@ void Drivhus::Network::loop() {
 
 void Drivhus::Network::activateWiFiStation() {
   if (Drivhus::getSettings()->getSSID().empty()) {
-    Serial.println("No SSID configured for STA");
+    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("No SSID configured for STA"));
     activateWiFiAccessPoint();
   } else {
-    Serial.print("activateWiFiStation to ");
-    Serial.println(Drivhus::getSettings()->getSSID().c_str());
+    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("activateWiFiStation to ")+Drivhus::getSettings()->getSSID());
     deactivateWiFi();
     m_dns_server.stop();
     WiFi.enableAP(false);
@@ -94,7 +93,6 @@ void Drivhus::Network::activateWiFiStation() {
 }
 
 void Drivhus::Network::activateWiFiAccessPoint() {
-  Serial.println("activateWiFiAccessPoint");
   deactivateWiFi();
   WiFi.enableAP(true);
   WiFi.mode(WIFI_AP);

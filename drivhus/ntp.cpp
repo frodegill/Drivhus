@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "global.h"
+#include "log.h"
 #include "network.h"
 #include "settings.h"
 
@@ -46,7 +47,7 @@ void Drivhus::NTP::loop() {
     if (m_previous_ntp_request_time != 0) {
       if ((m_previous_ntp_request_time+NTP_RESPONSE_TIMEOUT_MS)<current_time) {
         //Timeout
-        Serial.println("NTP request timed out");
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_ERROR, std::string("NTP request timed out"));
         m_previous_ntp_request_time = 0L;
       } else {
         handleNTPResponse();
