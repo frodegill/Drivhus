@@ -93,6 +93,7 @@ public:
 public:
   Settings(uint8_t pin);
   [[nodiscard]] virtual bool init() override;
+  [[nodiscard]] virtual bool postInit() override;
   virtual void loop() override;
   virtual const char* getName() const override {return "Settings";}
 
@@ -208,6 +209,8 @@ private:
   uint8_t m_pin;
 
 public:
+  bool m_system_ready;
+
   std::vector<OnValueChangeListener*> m_value_change_listeners;
   std::vector<OnConfigChangeListener*> m_config_change_listeners;
 

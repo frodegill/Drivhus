@@ -11,6 +11,7 @@
 
 Drivhus::Settings::Settings(uint8_t pin)
 : Drivhus::Component(),
+  m_system_ready(false),
   m_pin(pin),
   m_mqtt_serverport_param(Drivhus::MQTT::MQTT_DEFAULT_PORT),
   m_volt_multiplier_param(1.0f),
@@ -49,6 +50,11 @@ bool Drivhus::Settings::init() {
   return true;
 }
 
+bool Drivhus::Settings::postInit() {
+  m_system_ready = true;
+  return true;
+}
+
 void Drivhus::Settings::loop() {
   const unsigned long current_time = millis();
   if (current_time < m_previous_setup_pin_poll_time) { //Time will wrap around every ~50 days. Don't consider this an error
@@ -69,14 +75,18 @@ void Drivhus::Settings::addConfigChangeListener(Drivhus::OnConfigChangeListener*
 }
 
 void Drivhus::Settings::notifyValueChangeListeners(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
-  for (auto listener : m_value_change_listeners) {
-    listener->onValueChanged(type, plant_id);
+  if (m_system_ready) {
+    for (auto listener : m_value_change_listeners) {
+      listener->onValueChanged(type, plant_id);
+    }
   }
 }
 
 void Drivhus::Settings::notifyConfigChangeListeners(Drivhus::OnConfigChangeListener::Type type, uint8_t plant_id) {
-  for (auto listener : m_config_change_listeners) {
-    listener->onConfigChanged(type, plant_id);
+  if (m_system_ready) {
+    for (auto listener : m_config_change_listeners) {
+      listener->onConfigChanged(type, plant_id);
+    }
   }
 }
 
