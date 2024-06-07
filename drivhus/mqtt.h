@@ -18,8 +18,11 @@ class MQTT : public Component, public OnValueChangeListener
 {
 public:
   static constexpr uint16_t MQTT_DEFAULT_PORT = 1883;
+private:
   static constexpr unsigned long MQTT_CONNECTION_TIMEOUT_MS = 10000L;
   static constexpr unsigned long MINIMUM_PACKET_INTERVAL_MS = 10000L;
+  static constexpr const char* VALUES_TOPIC = "values";
+  static constexpr const char* CONFIG_TOPIC = "config";
 
 public:
   MQTT();
@@ -57,7 +60,8 @@ public:
 
   unsigned long m_cached_packet_time;
   unsigned long m_max_cache_time;
-  uint32_t m_changed_fields;
+  uint32_t m_fields_changed;
+  uint32_t m_plants_changed;
 };
 
 } //namespace

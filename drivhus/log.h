@@ -8,11 +8,12 @@
 #include <string>
 
 #include "component.h"
+#include "settings.h"
 
 
 namespace Drivhus {
 
-class Log : public Component
+class Log : public Component, public OnConfigChangeListener
 {
 public:
   enum class LogLevel {
@@ -31,7 +32,7 @@ public:
   };
 
 public:
-  static constexpr LogLevel LOG_LEVEL = LogLevel::LEVEL_ERROR;
+  static constexpr LogLevel LOG_LEVEL = LogLevel::LEVEL_INFO;
   static constexpr LogMode LOG_MODE = LogMode::MODE_SERIAL_AND_MQTT;
   static constexpr const char* MQTT_LOG_TOPIC = "debug";
 
@@ -41,6 +42,10 @@ public:
   virtual void loop() override;
   virtual const char* getName() const override {return "Log";}
 
+protected:
+  virtual void onConfigChanged(OnConfigChangeListener::Type type, uint8_t id) override;
+
+public:
   void setLogLevel(LogLevel log_level);
   void setLogMode(LogMode log_mode);
 
