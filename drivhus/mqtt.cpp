@@ -242,7 +242,6 @@ void Drivhus::MQTT::publishPendingFields() {
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE)!=0) {appendField(ss, first, "water_valve", static_cast<int>(Drivhus::getSettings()->getWaterValveStatus()));}
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNRISE)!=0) {appendField(ss, first, "sunrise", Drivhus::getSettings()->getSunrise(), 2);}
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNSET)!=0) {appendField(ss, first, "sunset", Drivhus::getSettings()->getSunset(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNSET)!=0) {appendField(ss, first, "sunset", Drivhus::getSettings()->getSunset(), 2);}
 
   ss << "}\n";
 

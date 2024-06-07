@@ -61,7 +61,7 @@ public:
   unsigned long m_cached_packet_time;
   unsigned long m_max_cache_time;
   uint32_t m_fields_changed;
-  uint32_t m_plants_changed;
+  uint16_t m_plants_changed;
 };
 
 } //namespace
