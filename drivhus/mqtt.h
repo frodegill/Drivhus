@@ -23,6 +23,7 @@ private:
   static constexpr unsigned long MINIMUM_PACKET_INTERVAL_MS = 10000L;
   static constexpr const char* VALUES_TOPIC = "values";
   static constexpr const char* CONFIG_TOPIC = "config";
+  static constexpr const char* LOG_TOPIC    = "log";
 
 public:
   MQTT();

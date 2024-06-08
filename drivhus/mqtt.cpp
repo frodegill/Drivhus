@@ -188,8 +188,9 @@ void Drivhus::MQTT::requestMQTTConnection() {
 }
 
 void Drivhus::MQTT::log(const std::string& msg) {
-  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("MQTT log"));
-  //TODO
+  if (!m_mqtt_client.publish((Drivhus::getSettings()->getMQTTServerId()+LOG_TOPIC).c_str(), msg.c_str(), true)) {
+    Serial.println((std::string("Publishing MQTT packet failed with error: ")+errorStateMessage()).c_str()); //Use only Serial to prevent infinite MQTT publish loop
+  }
 }
 
 void Drivhus::MQTT::subscribe() {
