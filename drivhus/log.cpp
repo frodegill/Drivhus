@@ -12,9 +12,11 @@
 
 Drivhus::Log::Log(LogLevel log_level, LogMode log_mode)
 : Drivhus::Component(),
+  Drivhus::OnConfigChangeListener(),
   m_log_level(LogLevel::LEVEL_NONE) {
   setLogLevel(log_level);
   setLogMode(log_mode);
+  Drivhus::getSettings()->addConfigChangeListener(this);
 }
 
 bool Drivhus::Log::init() {
@@ -40,7 +42,7 @@ void Drivhus::Log::onConfigChanged(OnConfigChangeListener::Type type, uint8_t id
     case PLANT_WET_VALUE: print(LogLevel::LEVEL_DEBUG, std::string("Plant ") + std::to_string(id) + " Wet Value set to " + Drivhus::floatToString(Drivhus::getSettings()->getWetValue(id), 2)); break;
     case PLANT_DRY_VALUE: print(LogLevel::LEVEL_DEBUG, std::string("Plant ") + std::to_string(id) + " Dry Value set to " + Drivhus::floatToString(Drivhus::getSettings()->getDryValue(id), 2)); break;
     case PLANT_WATERING_DURATION: print(LogLevel::LEVEL_DEBUG, std::string("Plant ") + std::to_string(id) + " Watering Duration set to " + std::to_string(Drivhus::getSettings()->getWateringDuration(id))); break;
-    case PLANT_WATERING_GRACE_VALUE: print(LogLevel::LEVEL_DEBUG, std::string("Plant ") + std::to_string(id) + " Watering Grace Period set to " + std::to_string(Drivhus::getSettings()->getWateringGracePeriod(id))); break;
+    case PLANT_WATERING_GRACE_VALUE: print(LogLevel::LEVEL_DEBUG, std::string("Plant ") + std::to_string(id) + " Watering Grace Period MS set to " + std::to_string(Drivhus::getSettings()->getWateringGracePeriodMs(id))); break;
   };
 }
 
@@ -69,7 +71,7 @@ void Drivhus::Log::print(LogLevel level, const std::string& msg)
     case LogLevel::LEVEL_DEBUG: level_string="DEBUG: "; break;
   };
 
-  if (level<=Drivhus::Log::LOG_LEVEL && !msg.empty())
+  if (level<=m_log_level && !msg.empty())
   {
     if (m_log_mode==LogMode::MODE_SERIAL || m_log_mode==LogMode::MODE_SERIAL_AND_MQTT) {
       Serial.println((level_string+msg).c_str());

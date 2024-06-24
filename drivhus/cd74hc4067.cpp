@@ -48,18 +48,18 @@ void Drivhus::CD74HC4067::loop() {
       deactivate();
     }
   } else {
-    if (++m_current_plant_id >= Drivhus::MAX_PLANT_COUNT) {
+    if (++m_current_plant_id > Drivhus::MAX_PLANT_COUNT) {
       m_current_plant_id = 1;
     }
 
     auto settings = Drivhus::getSettings();
-    if (!settings->getEnabled(m_current_plant_id)) {
+    if (!settings->getEnabled(m_current_plant_id) && !settings->getRequestWatering(m_current_plant_id)) {
       if (settings->getIsInWateringCycle(m_current_plant_id)) {
         deactivate();
       }
     } else {
-      if (current_time < settings->getPreviousWateringTime(m_current_plant_id)) { //Time will wrap around every ~50 days.
-        settings->setForceUpdateWateringTime(m_current_plant_id, current_time);
+      if (current_time < settings->getPreviousWateringTimeMs(m_current_plant_id)) { //Time will wrap around every ~50 days.
+        settings->setForceUpdateWateringTimeMs(m_current_plant_id, current_time);
       }
 
       if (settings->getIsInWateringCycle(m_current_plant_id) && settings->getPlantMoisture(m_current_plant_id) >= settings->getWetValue(m_current_plant_id)) {
@@ -69,11 +69,12 @@ void Drivhus::CD74HC4067::loop() {
       if (settings->getRequestWatering(m_current_plant_id)
           ||
           (settings->getEnabled(m_current_plant_id) &&
-          (settings->getPreviousWateringTime(m_current_plant_id)+settings->getWateringGracePeriod(m_current_plant_id)) >= current_time &&
-          (settings->getPlantMoisture(m_current_plant_id) < settings->getDryValue(m_current_plant_id) ||
+           (settings->getPreviousWateringTimeMs(m_current_plant_id)+settings->getWateringGracePeriodMs(m_current_plant_id)) < current_time &&
+           (settings->getPlantMoisture(m_current_plant_id) < settings->getDryValue(m_current_plant_id) ||
             (settings->getPlantMoisture(m_current_plant_id) < settings->getWetValue(m_current_plant_id) && settings->getIsInWateringCycle(m_current_plant_id))
+           )
           )
-        )) {
+         ) {
         activate(m_current_plant_id);
       }
     }

@@ -23,6 +23,7 @@ protected:
 
 public:
   [[nodiscard]] bool isBusy() const {return m_previous_watering_time!=0L;}
+  [[nodiscard]] bool isWateringPlant(uint8_t id) const {return Drivhus::isValidPlantId(id) && id==m_current_plant_id && isBusy();}
 
 private:
   void activate(uint8_t plant_id);

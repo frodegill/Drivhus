@@ -59,7 +59,7 @@ void Drivhus::RS485::loop() {
       }
 
       if (checkIfSensorIsPresent(m_previous_scanned_sensor_id)) {
-        Drivhus::getSettings()->setPlantMoisture(m_previous_scanned_sensor_id, tmp_holding_registers[1]/100.0f);
+        Drivhus::getSettings()->setPlantMoisture(m_previous_scanned_sensor_id, tmp_holding_registers[1]/10.0f);
       }
       Drivhus::getSettings()->setSensorUpdated(m_previous_scanned_sensor_id);
   }

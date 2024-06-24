@@ -32,11 +32,6 @@ public:
   };
 
 public:
-  static constexpr LogLevel LOG_LEVEL = LogLevel::LEVEL_INFO;
-  static constexpr LogMode LOG_MODE = LogMode::MODE_SERIAL_AND_MQTT;
-  static constexpr const char* MQTT_LOG_TOPIC = "debug";
-
-public:
   Log(LogLevel log_level, LogMode log_mode);
   [[nodiscard]] virtual bool init() override;
   virtual void loop() override;

@@ -67,9 +67,9 @@ unsigned long Drivhus::MQTT::changeTypeToCacheTime(OnValueChangeListener::Type t
     case WATER_LOW_TRIGGER:
     case WATER_HIGH_TRIGGER:
     case WATER_VALVE:
-    case SUNRISE:
-    case SUNSET:
-    case PLANT_IN_WATERING_CYCLE: return 1*1000;
+    case PLANT_IN_WATERING_CYCLE:
+    case PLANT_WATERING_STARTED:
+    case PLANT_WATERING_ENDED: return 1*1000;
 
     default: return 15*1000;
   };
@@ -93,14 +93,19 @@ std::string Drivhus::MQTT::errorStateMessage() {
 
 void Drivhus::MQTT::onValueChanged(OnValueChangeListener::Type type, uint8_t plant_id) {
   unsigned long max_cache_time = changeTypeToCacheTime(type);
-  if (type==Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE ||
-      type==Drivhus::OnValueChangeListener::Type::PLANT_IN_WATERING_CYCLE) {
-    if (Drivhus::isValidPlantId(plant_id)) {
-      m_plants_changed |= 1<<(plant_id-1);
-    }
-  } else {
-    m_fields_changed |= 1<<type;
-  }
+  switch(type) {
+    case PLANT_MOISTURE:
+    case PLANT_IN_WATERING_CYCLE:
+    case PLANT_WATERING_STARTED:
+    case PLANT_WATERING_ENDED:
+      if (Drivhus::isValidPlantId(plant_id)) {
+        m_plants_changed |= 1<<(plant_id-1);
+      }
+      break;
+
+    default:
+      m_fields_changed |= 1<<type;
+  };
   
   if (m_cached_packet_time == 0) {
     m_cached_packet_time = millis();
@@ -143,16 +148,17 @@ void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
       while ((c=line[index++]) != 0) {
         if (in_number && c>='0' && c<='9') {
           plant_id = plant_id*10 + (c-'0');
-        } else if (c == '/') {
+        } else if (c == '.') {
           break;
         } else {
           in_number = false;
         }
       }
 
-      if (c!=0 && Drivhus::isValidPlantId(plant_id)) //If c==0, we reached end of line without finding '/'
-      {
-        line = line.substr(index); //Skip "plantXX/"
+      if (c==0 || !Drivhus::isValidPlantId(plant_id)) { //If c==0, we reached end of line without finding '.'
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Skipping invalid conf line: ")+line);
+      } else {
+        line = line.substr(index); //Skip "plantXX."
 
         if (0 == line.rfind("water_now=", 0)) {
           if (0 != atoi(line.substr(10).c_str())) { //1 = activate
@@ -167,7 +173,7 @@ void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
         } else if (0 == line.rfind("watering_duration_ms=", 0)) {
           Drivhus::getSettings()->setWateringDuration(plant_id, max(1L, atol(line.substr(21).c_str())));
         } else if (0 == line.rfind("watering_grace_period_sec=", 0)) {
-          Drivhus::getSettings()->setWateringGracePeriod(plant_id, max(1L, atol(line.substr(26).c_str())) * 1000);
+          Drivhus::getSettings()->setWateringGracePeriodMs(plant_id, max(1L, atol(line.substr(26).c_str())) * 1000);
         }
       }
     }
@@ -189,7 +195,7 @@ void Drivhus::MQTT::requestMQTTConnection() {
 
 void Drivhus::MQTT::log(const std::string& msg) {
   if (!m_mqtt_client.publish((Drivhus::getSettings()->getMQTTServerId()+LOG_TOPIC).c_str(), msg.c_str(), true)) {
-    Serial.println((std::string("Publishing MQTT packet failed with error: ")+errorStateMessage()).c_str()); //Use only Serial to prevent infinite MQTT publish loop
+    Serial.println((std::string("Publishing MQTT log packet failed with error: ")+errorStateMessage()).c_str()); //Use only Serial to prevent infinite MQTT publish loop
   }
 }
 
@@ -211,7 +217,8 @@ void Drivhus::MQTT::subscribe() {
 
 void Drivhus::MQTT::publishPendingFields() {
   const unsigned long current_time = millis();
-  if (m_cached_packet_time==0 ||
+  if (!Drivhus::getSettings()->getIsSystemReady() ||
+      m_cached_packet_time==0 ||
       (m_fields_changed==0 && m_plants_changed==0) ||
       (m_cached_packet_time+m_max_cache_time)>=current_time) {
     return;
@@ -222,27 +229,66 @@ void Drivhus::MQTT::publishPendingFields() {
     return;
   }
 
+  uint32_t fields_pushed = 0;
+  uint16_t plants_pushed = 0;
   std::stringstream ss;
   bool first = true;
   ss << std::fixed << "{\n";
 
   for (auto i=1; i<=Drivhus::MAX_PLANT_COUNT; i++) {
     if ((m_plants_changed & 1<<(i-1)) != 0) {
-      appendField(ss, first, "plant"+std::to_string(i)+"/moisture", Drivhus::getSettings()->getPlantMoisture(i), 2);
-      appendField(ss, first, "plant"+std::to_string(i)+"/watering", Drivhus::getSettings()->getIsInWateringCycle(i) ? 1 : 0);
+      if (appendField(ss, first, "plant"+std::to_string(i)+".moisture", Drivhus::getSettings()->getPlantMoisture(i), 2) &&
+          appendField(ss, first, "plant"+std::to_string(i)+".watering", Drivhus::getSettings()->getIsWateringPlant(i) ? 1 : 0)) {
+        plants_pushed |= 1<<(i-1);
+      }
     }
   }
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::INDOOR_TEMP)!=0) {appendField(ss, first, "itemp", Drivhus::getSettings()->getIndoorTemp(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY)!=0) {appendField(ss, first, "ihumid", Drivhus::getSettings()->getIndoorHumidity(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP)!=0) {appendField(ss, first, "otemp", Drivhus::getSettings()->getOutdoorTemp(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY)!=0) {appendField(ss, first, "ohumid", Drivhus::getSettings()->getOutdoorHumidity(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::LIGHT)!=0) {appendField(ss, first, "light", Drivhus::getSettings()->getLight(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::VOLT)!=0) {appendField(ss, first, "volt", Drivhus::getSettings()->getVolt(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER)!=0) {appendField(ss, first, "water_low", Drivhus::getSettings()->getWaterLowTrigger());}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER)!=0) {appendField(ss, first, "water_high", Drivhus::getSettings()->getWaterHighTrigger(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE)!=0) {appendField(ss, first, "water_valve", static_cast<int>(Drivhus::getSettings()->getWaterValveStatus()));}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNRISE)!=0) {appendField(ss, first, "sunrise", Drivhus::getSettings()->getSunrise(), 2);}
-  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNSET)!=0) {appendField(ss, first, "sunset", Drivhus::getSettings()->getSunset(), 2);}
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::INDOOR_TEMP)!=0) {
+    if (appendField(ss, first, "itemp", Drivhus::getSettings()->getIndoorTemp(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::INDOOR_TEMP;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY)!=0) {
+    if (appendField(ss, first, "ihumid", Drivhus::getSettings()->getIndoorHumidity(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP)!=0) {
+    if (appendField(ss, first, "otemp", Drivhus::getSettings()->getOutdoorTemp(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY)!=0) {
+    if (appendField(ss, first, "ohumid", Drivhus::getSettings()->getOutdoorHumidity(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::LIGHT)!=0) {
+    if (appendField(ss, first, "light", Drivhus::getSettings()->getLight(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::LIGHT;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::VOLT)!=0) {
+    if (appendField(ss, first, "volt", Drivhus::getSettings()->getVolt(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::VOLT;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER)!=0) {
+    if (appendField(ss, first, "water_low", Drivhus::getSettings()->getWaterLowTrigger())) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER)!=0) {
+    if (appendField(ss, first, "water_high", Drivhus::getSettings()->getWaterHighTrigger(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE)!=0) {
+    if (appendField(ss, first, "water_valve", static_cast<int>(Drivhus::getSettings()->getWaterValveStatus()))) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNRISE)!=0) {
+    if (appendField(ss, first, "sunrise", Drivhus::getSettings()->getSunrise(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::SUNRISE;}
+  }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNSET)!=0) {
+    if (appendField(ss, first, "sunset", Drivhus::getSettings()->getSunset(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::SUNSET;}
+  }
+
+  //Ignore any other fields
+  fields_pushed |= ~(1<<Drivhus::OnValueChangeListener::Type::INDOOR_TEMP|
+                     1<<Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY|
+                     1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP|
+                     1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY|
+                     1<<Drivhus::OnValueChangeListener::Type::LIGHT|
+                     1<<Drivhus::OnValueChangeListener::Type::VOLT|
+                     1<<Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER|
+                     1<<Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER|
+                     1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE|
+                     1<<Drivhus::OnValueChangeListener::Type::SUNRISE|
+                     1<<Drivhus::OnValueChangeListener::Type::SUNSET);
 
   ss << "}\n";
 
@@ -254,27 +300,44 @@ void Drivhus::MQTT::publishPendingFields() {
   }
 
   Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Publishing ")+mqtt_packet+" to "+Drivhus::getSettings()->getMQTTServerId()+VALUES_TOPIC);
-  if (!m_mqtt_client.publish((Drivhus::getSettings()->getMQTTServerId()+VALUES_TOPIC).c_str(), mqtt_packet.c_str(), true)) {
+  if (m_mqtt_client.publish((Drivhus::getSettings()->getMQTTServerId()+VALUES_TOPIC).c_str(), mqtt_packet.c_str(), true)) {
+    m_fields_changed &= ~fields_pushed;
+    m_plants_changed &= ~plants_pushed;
+  } else {
     Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_ERROR, std::string("Publishing MQTT packet failed with error: ")+errorStateMessage());
   }
 
-  m_cached_packet_time = 0L;
-  m_max_cache_time = 0L;
-  m_fields_changed = m_plants_changed = 0;
+  if (m_fields_changed==0 && m_plants_changed==0) {
+    m_cached_packet_time = 0L;
+    m_max_cache_time = 0L;
+  } else {
+    m_cached_packet_time = millis();
+    m_max_cache_time = 500L;
+  }
 }
 
-void Drivhus::MQTT::appendField(std::stringstream& stream, bool& first, std::string&& field, float value, uint8_t precision) {
+bool Drivhus::MQTT::appendField(std::stringstream& stream, bool& first, std::string&& field, float value, uint8_t precision) {
+  if (stream.str().length()+field.length()+10 > BUFFER_SIZE) {
+    return false;
+  }
+
   if (!first) {
     stream << ",";
   }
   first = false;
   stream << "\"" << field << "\":" << std::fixed << std::setprecision(precision) << value << "\n";
+  return true;
 }
 
-void Drivhus::MQTT::appendField(std::stringstream& stream, bool& first, std::string&& field, int value) {
+bool Drivhus::MQTT::appendField(std::stringstream& stream, bool& first, std::string&& field, int value) {
+  if (stream.str().length()+field.length()+10 > BUFFER_SIZE) {
+    return false;
+  }
+
   if (!first) {
     stream << ",";
   }
   first = false;
   stream << "\"" << field << "\":" << value << "\n";
+  return true;
 }

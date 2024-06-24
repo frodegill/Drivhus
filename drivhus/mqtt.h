@@ -19,6 +19,7 @@ class MQTT : public Component, public OnValueChangeListener
 public:
   static constexpr uint16_t MQTT_DEFAULT_PORT = 1883;
 private:
+  static constexpr uint BUFFER_SIZE = 200;
   static constexpr unsigned long MQTT_CONNECTION_TIMEOUT_MS = 10000L;
   static constexpr unsigned long MINIMUM_PACKET_INTERVAL_MS = 10000L;
   static constexpr const char* VALUES_TOPIC = "values";
@@ -50,8 +51,8 @@ public:
 private:
   void subscribe();
   void publishPendingFields();
-  void appendField(std::stringstream& stream, bool& first, std::string&& field, float value, uint8_t precision);
-  void appendField(std::stringstream& stream, bool& first, std::string&& field, int value);
+  [[nodiscard]] bool appendField(std::stringstream& stream, bool& first, std::string&& field, float value, uint8_t precision);
+  [[nodiscard]] bool appendField(std::stringstream& stream, bool& first, std::string&& field, int value);
 
 public:
   WiFiClient m_esp_client;

@@ -149,7 +149,7 @@ private:
 public:
   void setPlantMoisture(uint8_t plant_id, float value);
   void setIsInWateringCycle(uint8_t plant_id, bool value) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].in_watering_cycle=value; notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_IN_WATERING_CYCLE, plant_id);}}
-  void setForceUpdateWateringTime(uint8_t plant_id, unsigned long value) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=value;}}
+  void setForceUpdateWateringTimeMs(uint8_t plant_id, unsigned long value) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=value;}}
   void setIndoorTemp(float value) {if (m_indoor_temp!=value) {m_indoor_temp=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::INDOOR_TEMP);}}
   void setIndoorHumidity(float value) {if (m_indoor_humidity!=value) {m_indoor_humidity=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::INDOOR_HUMIDITY);}}
   void setOutdoorTemp(float value) {if (m_outdoor_temp!=value) {m_outdoor_temp=value; calculateOutdoorHumidityIndoor(); notifyValueChangeListeners(OnValueChangeListener::Type::OUTDOOR_TEMP);}}
@@ -161,14 +161,15 @@ public:
   void setWaterValveStatus(ValveStatus value) {if (m_water_valve_status!=value) {m_water_valve_status=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_VALVE);}}
   void setSunrise(float value) {if (m_sunrise!=value) {m_sunrise=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNRISE);}}
   void setSunset(float value) {if (m_sunset!=value) {m_sunset=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNSET);}}
-  void setWateringStarted(uint8_t plant_id) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=millis(); notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_WATERING_STARTED, plant_id);}}
+  void setWateringStarted(uint8_t plant_id);
   void setWateringEnded(uint8_t plant_id) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=millis(); notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_WATERING_ENDED, plant_id);}}
   void setSensorScanStarted() {notifyValueChangeListeners(OnValueChangeListener::Type::SENSOR_SCAN_STARTED);}
   void setSensorUpdated(uint8_t sensor_id) {notifyValueChangeListeners(OnValueChangeListener::Type::SENSOR_UPDATED, sensor_id);}
   void setSensorScanEnded() {notifyValueChangeListeners(OnValueChangeListener::Type::SENSOR_SCAN_ENDED);}
   [[nodiscard]] float getPlantMoisture(uint8_t plant_id) const {return getEnabled(plant_id) ? m_plants[plant_id-1].current_value : 0.0f;}
   [[nodiscard]] bool getIsInWateringCycle(uint8_t plant_id) const {return getEnabled(plant_id) ? m_plants[plant_id-1].in_watering_cycle : false;}
-  [[nodiscard]] unsigned long getPreviousWateringTime(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].previous_watering_time:0L;}
+  [[nodiscard]] bool getIsWateringPlant(uint8_t plant_id) const;
+  [[nodiscard]] unsigned long getPreviousWateringTimeMs(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].previous_watering_time:0L;}
   [[nodiscard]] float getIndoorTemp() const {return m_indoor_temp;}
   [[nodiscard]] float getIndoorHumidity() const {return m_indoor_humidity;}
   [[nodiscard]] float getOutdoorTemp() const {return m_outdoor_temp;}
@@ -195,17 +196,17 @@ public:
   void setWetValue(uint8_t plant_id, float value) {if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].wet_value!=value) {m_plants[plant_id-1].wet_value=value; notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_WET_VALUE, plant_id);}}
   void setDryValue(uint8_t plant_id, float value) {if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].dry_value!=value) {m_plants[plant_id-1].dry_value=value; notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_DRY_VALUE, plant_id);}}
   void setWateringDuration(uint8_t plant_id, unsigned long value_ms) {if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].watering_duration_ms!=value_ms) {m_plants[plant_id-1].watering_duration_ms=value_ms; notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_WATERING_DURATION, plant_id);}}
-  void setWateringGracePeriod(uint8_t plant_id, unsigned long value_ms) {if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].watering_grace_period_ms!=value_ms) {m_plants[plant_id-1].watering_grace_period_ms=value_ms; notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_WATERING_GRACE_VALUE, plant_id);}}
+  void setWateringGracePeriodMs(uint8_t plant_id, unsigned long value_ms) {if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].watering_grace_period_ms!=value_ms) {m_plants[plant_id-1].watering_grace_period_ms=value_ms; notifyConfigChangeListeners(OnConfigChangeListener::Type::PLANT_WATERING_GRACE_VALUE, plant_id);}}
   [[nodiscard]] bool getIsInSetupMode();
   [[nodiscard]] unsigned long getMsBetweenReading() const {return m_ms_between_reading;}
   [[nodiscard]] float getFanActivateTemp() const {return m_fan_activate_temp_value;}
   [[nodiscard]] float getFanActivateHumidity() const {return m_fan_activate_humid_value;}
-  [[nodiscard]] bool getRequestWatering(uint8_t plant_id) const {return getEnabled(plant_id) ? m_plants[plant_id-1].watering_requested : false;}
+  [[nodiscard]] bool getRequestWatering(uint8_t plant_id) const {return m_plants[plant_id-1].watering_requested;} //Should be possible to force watering of disabled plants
   [[nodiscard]] bool getEnabled(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].enabled:false;}
   [[nodiscard]] float getWetValue(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].wet_value:0.0f;}
   [[nodiscard]] float getDryValue(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].dry_value:0.0f;}
   [[nodiscard]] unsigned long getWateringDuration(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].watering_duration_ms:0L;}
-  [[nodiscard]] unsigned long getWateringGracePeriod(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].watering_grace_period_ms:0L;}
+  [[nodiscard]] unsigned long getWateringGracePeriodMs(uint8_t plant_id) const {return Drivhus::isValidPlantId(plant_id)?m_plants[plant_id-1].watering_grace_period_ms:0L;}
 
 private:
   uint8_t m_pin;

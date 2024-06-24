@@ -4,6 +4,7 @@
 #include <vector>
 #include <tuple>
 
+#include "cd74hc4067.h"
 #include "mqtt.h"
 #include "network.h"
 #include "webserver.h"
@@ -258,6 +259,18 @@ void Drivhus::Settings::flushSettings() {
   }
 }
 
+void Drivhus::Settings::setWateringStarted(uint8_t plant_id) {
+  if (Drivhus::isValidPlantId(plant_id)) {
+    m_plants[plant_id-1].watering_requested = false; //If this watering was requested, consider it handled by now
+    m_plants[plant_id-1].previous_watering_time=millis();
+    notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_WATERING_STARTED, plant_id);
+  }
+}
+
+ bool Drivhus::Settings::getIsWateringPlant(uint8_t plant_id) const {
+  return Drivhus::getCD74HC4067()->isWateringPlant(plant_id);
+}
+ 
 void Drivhus::Settings::calculateOutdoorHumidityIndoor() {
   if (isnan(m_indoor_temp) || isnan(m_outdoor_temp) || isnan(m_outdoor_humidity)) {
     m_outdoor_as_indoor_humidity = NAN;
