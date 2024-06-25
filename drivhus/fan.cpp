@@ -102,4 +102,5 @@ void Drivhus::Fan::toggle(bool on) {
   m_activated = on;
   m_previous_event_time = millis();
   digitalWrite(m_pin, on ? HIGH : LOW);
+  Drivhus::getSettings()->setFanActive(on);
 }

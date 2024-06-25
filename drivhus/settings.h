@@ -31,6 +31,7 @@ public:
     WATER_LOW_TRIGGER,
     WATER_HIGH_TRIGGER,
     WATER_VALVE,
+    FAN,
     SUNRISE,
     SUNSET,
     SENSOR_SCAN_STARTED,
@@ -159,6 +160,7 @@ public:
   void setWaterLowTrigger(int value) {if (m_water_low_trigger!=value) {m_water_low_trigger=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_LOW_TRIGGER);}}
   void setWaterHighTrigger(int value) {if (m_water_high_trigger!=value) {m_water_high_trigger=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_HIGH_TRIGGER);}}
   void setWaterValveStatus(ValveStatus value) {if (m_water_valve_status!=value) {m_water_valve_status=value; notifyValueChangeListeners(OnValueChangeListener::Type::WATER_VALVE);}}
+  void setFanActive(bool value) {if (m_fan_active!=value) {m_fan_active=value; notifyValueChangeListeners(OnValueChangeListener::Type::FAN);}}
   void setSunrise(float value) {if (m_sunrise!=value) {m_sunrise=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNRISE);}}
   void setSunset(float value) {if (m_sunset!=value) {m_sunset=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNSET);}}
   void setWateringStarted(uint8_t plant_id);
@@ -180,6 +182,7 @@ public:
   [[nodiscard]] int   getWaterLowTrigger() const {return m_water_low_trigger;}
   [[nodiscard]] int   getWaterHighTrigger() const {return m_water_high_trigger;}
   [[nodiscard]] ValveStatus getWaterValveStatus() const {return m_water_valve_status;}
+  [[nodiscard]] bool getFanActive() const {return m_fan_active;}
   [[nodiscard]] float getSunrise() const {return m_sunrise;}
   [[nodiscard]] float getSunset() const {return m_sunset;}
 private:
@@ -252,6 +255,7 @@ public:
   int m_water_low_trigger;
   int m_water_high_trigger;
   ValveStatus m_water_valve_status;
+  bool m_fan_active;
   float m_sunrise;
   float m_sunset;
 };

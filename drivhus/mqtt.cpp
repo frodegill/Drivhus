@@ -69,6 +69,7 @@ unsigned long Drivhus::MQTT::changeTypeToCacheTime(OnValueChangeListener::Type t
     case WATER_LOW_TRIGGER:
     case WATER_HIGH_TRIGGER:
     case WATER_VALVE:
+    case FAN:
     case PLANT_IN_WATERING_CYCLE:
     case PLANT_WATERING_STARTED:
     case PLANT_WATERING_ENDED: return 1*1000;
@@ -272,6 +273,9 @@ void Drivhus::MQTT::publishPendingFields() {
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE)!=0) {
     if (appendField(ss, first, "water_valve", static_cast<int>(Drivhus::getSettings()->getWaterValveStatus()))) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE;}
   }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::FAN)!=0) {
+    if (appendField(ss, first, "fan_active", static_cast<int>(Drivhus::getSettings()->getFanActive()))) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::FAN;}
+  }
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::SUNRISE)!=0) {
     if (appendField(ss, first, "sunrise", Drivhus::getSettings()->getSunrise(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::SUNRISE;}
   }
@@ -289,6 +293,7 @@ void Drivhus::MQTT::publishPendingFields() {
                      1<<Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER|
                      1<<Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER|
                      1<<Drivhus::OnValueChangeListener::Type::WATER_VALVE|
+                     1<<Drivhus::OnValueChangeListener::Type::FAN|
                      1<<Drivhus::OnValueChangeListener::Type::SUNRISE|
                      1<<Drivhus::OnValueChangeListener::Type::SUNSET);
 
