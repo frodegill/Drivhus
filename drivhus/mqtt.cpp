@@ -1,6 +1,8 @@
 #include <string>
 #include "mqtt.h"
 
+#include <ArduinoJson.h>
+
 #include <iomanip>
 #include <sstream>
 
@@ -128,24 +130,26 @@ void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
     Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Ignoring unrelated mqtt::callback ")+topic);
     return;
   }
- 
-  std::istringstream input(std::string(reinterpret_cast<const char*>(payload), length));
-  for (std::string line; std::getline(input, line);) {
-    if (0 == line.rfind("sec_between_reading=", 0)) {
-      unsigned long value = max(1L, atol(line.substr(20).c_str()));
-      Drivhus::getSettings()->setMsBetweenReading(value*1000);
-    } else if (0 == line.rfind("fan_activate_temp=", 0)) {
-      float value = max(0.0, min(100.0, atof(line.substr(18).c_str())));
-      Drivhus::getSettings()->setFanActivateTemp(value);
-    } else if (0 == line.rfind("fan_activate_humid=", 0)) {
-      float value = max(0.0, min(100.0, atof(line.substr(19).c_str())));
-      Drivhus::getSettings()->setFanActivateHumidity(value);
-    } else if (0==line.rfind("plant", 0)) {
+
+  JsonDocument doc;
+  DeserializationError status = deserializeJson(doc, payload);
+  if (DeserializationError::Code::Ok != status) {
+    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_ERROR, std::string("Parsing Config JSON failed: ") + status.c_str());
+    return;
+  }
+
+  for (JsonPair kv : doc.as<JsonObject>()) {
+    const char* key = kv.key().c_str();
+    if (0 == ::strncmp("sec_between_reading", key, 19)) {
+      Drivhus::getSettings()->setMsBetweenReading(max(1L, kv.value().as<long>()) * 1000L);
+    } else if (0 == ::strncmp("fan_activate_temp", key, 17)) {
+      Drivhus::getSettings()->setFanActivateTemp(max(0.0f, min(100.0f, kv.value().as<float>())));
+    } else if (0 == ::strncmp("plant", key, 5)) {
       uint8_t plant_id = 0;
       size_t index = 5;
       char c;
       bool in_number = true;
-      while ((c=line[index++]) != 0) {
+      while ((c=key[index++]) != 0) {
         if (in_number && c>='0' && c<='9') {
           plant_id = plant_id*10 + (c-'0');
         } else if (c == '.') {
@@ -156,24 +160,22 @@ void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
       }
 
       if (c==0 || !Drivhus::isValidPlantId(plant_id)) { //If c==0, we reached end of line without finding '.'
-        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Skipping invalid conf line: ")+line);
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Skipping invalid conf key: ")+key);
       } else {
-        line = line.substr(index); //Skip "plantXX."
+        key += index; //Skip "plantXX."
 
-        if (0 == line.rfind("water_now=", 0)) {
-          if (0 != atoi(line.substr(10).c_str())) { //1 = activate
+        if (0 == ::strncmp("water_now", key, 9)) {
+          if (true == kv.value().as<bool>()) {
             Drivhus::getSettings()->setRequestWatering(plant_id);
           }
-        } else if (0 == line.rfind("enabled=", 0)) {
-          Drivhus::getSettings()->setEnabled(plant_id, atoi(line.substr(8).c_str())!=0);
-        } else if (0 == line.rfind("dry_value=", 0)) {
-          Drivhus::getSettings()->setDryValue(plant_id, max(0.0, min(100.0, atof(line.substr(10).c_str()))));
-        } else if (0 == line.rfind("wet_value=", 0)) {
-          Drivhus::getSettings()->setWetValue(plant_id, max(0.0, min(100.0, atof(line.substr(10).c_str()))));
-        } else if (0 == line.rfind("watering_duration_ms=", 0)) {
-          Drivhus::getSettings()->setWateringDuration(plant_id, max(1L, atol(line.substr(21).c_str())));
-        } else if (0 == line.rfind("watering_grace_period_sec=", 0)) {
-          Drivhus::getSettings()->setWateringGracePeriodMs(plant_id, max(1L, atol(line.substr(26).c_str())) * 1000);
+        } else if (0 == ::strncmp("dry_value", key, 9)) {
+          Drivhus::getSettings()->setDryValue(plant_id, max(0.0f, min(100.0f, kv.value().as<float>())));
+        } else if (0 == ::strncmp("wet_value", key, 9)) {
+          Drivhus::getSettings()->setWetValue(plant_id, max(0.0f, min(100.0f, kv.value().as<float>())));
+        } else if (0 == ::strncmp("watering_duration_ms", key, 20)) {
+          Drivhus::getSettings()->setWateringDuration(plant_id, max(1L, kv.value().as<long>()));
+        } else if (0 == ::strncmp("watering_grace_period_sec", key, 25)) {
+          Drivhus::getSettings()->setWateringGracePeriodMs(plant_id, max(1L, kv.value().as<long>()) * 1000L);
         }
       }
     }
