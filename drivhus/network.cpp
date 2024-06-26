@@ -58,9 +58,9 @@ void Drivhus::Network::loop() {
       }
     } else {
       if (m_wifi_disconnected_since != 0L) {
-        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("WiFi is in Connected state. Got IP ")+WiFi.localIP().toString().c_str());
         m_wifi_disconnected_since = 0L;
         Drivhus::getMQTT()->requestMQTTConnection();
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("WiFi is in Connected state. Got IP ")+WiFi.localIP().toString().c_str());
       }
     }
   } else {
