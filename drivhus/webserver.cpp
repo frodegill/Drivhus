@@ -204,10 +204,10 @@ void Drivhus::WebServer::onEvent([[maybe_unused]] AsyncWebSocket* server, [[mayb
 
 void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type type, uint8_t plant_id) {
   switch(type) {
-    case INDOOR_TEMP: //[[fallthrough]]
-    case INDOOR_HUMIDITY: //[[fallthrough]]
-    case OUTDOOR_TEMP: //[[fallthrough]]
-    case OUTDOOR_HUMIDITY: {
+    case Drivhus::OnValueChangeListener::Type::INDOOR_TEMP: //[[fallthrough]]
+    case Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY: //[[fallthrough]]
+    case Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP: //[[fallthrough]]
+    case Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY: {
       float value = Drivhus::getSettings()->getIndoorTemp();
       if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
           m_temp[0] = value;
@@ -234,7 +234,7 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       }
       break;
     }
-    case LIGHT: {
+    case Drivhus::OnValueChangeListener::Type::LIGHT: {
       float value = Drivhus::getSettings()->getLight();
       if (value<(m_light*0.99f) || value>(m_light*1.01f)) {
         m_light=value;
@@ -242,7 +242,7 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       }
       break;
     }
-    case VOLT: {
+    case Drivhus::OnValueChangeListener::Type::VOLT: {
       float value = Drivhus::getSettings()->getVolt();
       if (value<(m_volt*0.99f) || value>(m_volt*1.01f)) {
         m_volt=value;
@@ -250,35 +250,42 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       }
       break;
     }
-    case WATER_LOW_TRIGGER: {
+    case Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER: {
       notifyClients("WLL", Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
       break;
     }
-    case WATER_HIGH_TRIGGER: {
+    case Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER: {
       notifyClients("WLH", Drivhus::getSettings()->getWaterHighTrigger()==LOW ? "Inactive" : "Active");
       break;
     }
-    case WATER_VALVE: {
+    case Drivhus::OnValueChangeListener::Type::WATER_VALVE: {
       notifyClients("WV", Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
       break;
     }
-    case SUNRISE: {
+    case Drivhus::OnValueChangeListener::Type::SUNRISE: {
       m_sunrise = Drivhus::getSettings()->getSunrise();
       updateGrowlightTime();
       break;
     }
-    case SUNSET: {
+    case Drivhus::OnValueChangeListener::Type::SUNSET: {
       m_sunset = Drivhus::getSettings()->getSunset();
       updateGrowlightTime();
       break;
     }
+    case Drivhus::OnValueChangeListener::Type::SENSOR_SCAN_ENDED:
+      notifyClients("CSI", "-");
+      break;
+    case Drivhus::OnValueChangeListener::Type::SENSOR_UPDATED:
+      updateSensor(plant_id);
+      break;
+
     default: break;
   };
 }
 
 void Drivhus::WebServer::onConfigChanged(Drivhus::OnConfigChangeListener::Type type, uint8_t id) {
   switch(type) {
-    case SETUP_MODE:
+    case Drivhus::OnConfigChangeListener::Type::SETUP_MODE:
       {
         bool tmp = Drivhus::getSettings()->getIsInSetupMode();
         if (m_is_showing_setup!=tmp) {
@@ -295,11 +302,12 @@ void Drivhus::WebServer::onConfigChanged(Drivhus::OnConfigChangeListener::Type t
         }
       }
       break;
-    case SENSOR_SCAN_ENDED:
-      notifyClients("CSI", "-");
-      break;
-    case SENSOR_UPDATED:
+    case Drivhus::OnConfigChangeListener::Type::PLANT_WET_VALUE: //[[fallthrough]]
+    case Drivhus::OnConfigChangeListener::Type::PLANT_DRY_VALUE:
       updateSensor(id);
+      break;
+
+    default: break;
   };
 }
 
@@ -480,11 +488,11 @@ std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const 
     return "Not available";
   }
   std::stringstream ss;
-  ss << Drivhus::floatToString(Drivhus::getSettings()->getPlantMoisture(sensor_id+1), 2);
+  ss << Drivhus::floatToString(Drivhus::getSettings()->getPlantMoisture(sensor_id), 2);
   ss << " (";
-  ss << Drivhus::floatToString(Drivhus::getSettings()->getWetValue(sensor_id+1), 2);
+  ss << Drivhus::floatToString(Drivhus::getSettings()->getWetValue(sensor_id), 2);
   ss << " - ";
-  ss << Drivhus::floatToString(Drivhus::getSettings()->getDryValue(sensor_id+1), 2);
+  ss << Drivhus::floatToString(Drivhus::getSettings()->getDryValue(sensor_id), 2);
   ss << ")";
   return ss.str();
 }
