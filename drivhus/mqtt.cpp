@@ -306,7 +306,7 @@ void Drivhus::MQTT::publishPendingFields() {
     }
   }
 
-  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Publishing ")+mqtt_packet+" to "+Drivhus::getSettings()->getMQTTServerId()+VALUES_TOPIC);
+  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Publishing ")+mqtt_packet+" to "+Drivhus::getSettings()->getMQTTServerId()+VALUES_TOPIC);
   if (m_mqtt_client.publish((Drivhus::getSettings()->getMQTTServerId()+VALUES_TOPIC).c_str(), mqtt_packet.c_str(), true)) {
     m_fields_changed &= ~fields_pushed;
     m_plants_changed &= ~plants_pushed;

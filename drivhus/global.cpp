@@ -75,7 +75,7 @@ std::shared_ptr<Drivhus::KY018> g_ky018;
 std::shared_ptr<Drivhus::Log> g_log;
 [[nodiscard]] std::shared_ptr<Drivhus::Log> Drivhus::getLog() {
   if (!g_log) {
-    g_log = std::make_shared<Drivhus::Log>(Drivhus::Log::LogLevel::LEVEL_ERROR, Drivhus::Log::LogMode::MODE_SERIAL);
+    g_log = std::make_shared<Drivhus::Log>(Drivhus::Log::LogLevel::LEVEL_INFO, Drivhus::Log::LogMode::MODE_SERIAL_AND_MQTT);
   }
   return g_log;
 }
