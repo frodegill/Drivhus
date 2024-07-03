@@ -51,10 +51,10 @@ void Drivhus::Fan::loop() {
   }
 
   if ((m_previous_event_time+ON_OFF_INTERVAL_MS)<current_time) {
-    bool temp_above_treshold = !isnan(m_indoor_temp) && !isnan(m_outdoor_temp) &&
+    bool temp_above_treshold = !std::isnan(m_indoor_temp) && !std::isnan(m_outdoor_temp) &&
                                m_indoor_temp > m_fan_activate_temp_value && //Can we get cooler air into the greenhouse?
                                (m_indoor_temp-TEMP_DIFF_TRESHOLD) > m_outdoor_temp;
-    bool humidity_above_treshold = !isnan(m_indoor_humidity) && !isnan(m_outdoor_humidity_indoor) &&
+    bool humidity_above_treshold = !std::isnan(m_indoor_humidity) && !std::isnan(m_outdoor_humidity_indoor) &&
                                    m_indoor_humidity > m_fan_activate_humid_value && //Can we get dryer air into the greenhouse?
                                    (m_indoor_humidity-HUMIDITY_DIFF_TRESHOLD) > m_outdoor_humidity_indoor;
     

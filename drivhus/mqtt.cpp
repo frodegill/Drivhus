@@ -119,12 +119,12 @@ void Drivhus::MQTT::onValueChanged(OnValueChangeListener::Type type, uint8_t pla
   }
 }
 
-void Drivhus::MQTT::globalMQTTCallback(char* topic, uint8_t* payload, unsigned int length) {
+void Drivhus::MQTT::globalMQTTCallback(const char* topic, const uint8_t* payload, unsigned int length) {
   Drivhus::getMQTT()->callback(topic, payload, length);  
 }
 
-void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length) {
-  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("MQTT callback for ")+topic);
+void Drivhus::MQTT::callback(const char* topic, const uint8_t* payload, unsigned int length) { //Logging to MQTT within this callback will overwrite the callback buffers. Only do this if you will never access those buffers again
+  Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("MQTT callback for ")+topic, Drivhus::Log::LogMode::MODE_SERIAL);
 
   auto config_topic = Drivhus::getSettings()->getMQTTServerId()+CONFIG_TOPIC;
   if (0 != strncmp(config_topic.c_str(), topic, config_topic.length())) {
@@ -161,7 +161,7 @@ void Drivhus::MQTT::callback(char* topic, uint8_t* payload, unsigned int length)
       }
 
       if (c==0 || !Drivhus::isValidPlantId(plant_id)) { //If c==0, we reached end of line without finding '.'
-        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Skipping invalid conf key: ")+key);
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_INFO, std::string("Skipping invalid conf key: ")+key, Drivhus::Log::LogMode::MODE_SERIAL);
       } else {
         key += index; //Skip "plantXX."
 

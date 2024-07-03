@@ -40,8 +40,8 @@ protected:
   virtual void onValueChanged(OnValueChangeListener::Type type, uint8_t plant_id) override;
 
 public:
-  static void globalMQTTCallback(char* topic, uint8_t* payload, unsigned int length);
-  void callback(char* topic, uint8_t* payload, unsigned int length);
+  static void globalMQTTCallback(const char* topic, const uint8_t* payload, unsigned int length);
+  void callback(const char* topic, const uint8_t* payload, unsigned int length);
 
   void requestMQTTConnection();
   [[nodiscard]] bool isMQTTConnectionRequested() const {return m_reconnect_time!=0L;}

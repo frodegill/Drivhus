@@ -62,22 +62,25 @@ void Drivhus::Log::setLogMode(LogMode log_mode) {
   m_log_mode = log_mode;
 }
 
-void Drivhus::Log::print(LogLevel level, const std::string& msg)
+void Drivhus::Log::print(LogLevel level, const std::string& msg, LogMode filter)
 {
   std::string level_string;
   switch(level) {
     case LogLevel::LEVEL_ERROR: level_string="ERROR: "; break;
     case LogLevel::LEVEL_INFO: level_string="INFO: "; break;
     case LogLevel::LEVEL_DEBUG: level_string="DEBUG: "; break;
+    case LogLevel::LEVEL_NONE: break;
   };
 
   if (level<=m_log_level && !msg.empty())
   {
-    if (m_log_mode==LogMode::MODE_SERIAL || m_log_mode==LogMode::MODE_SERIAL_AND_MQTT) {
+    if (0!=(static_cast<int>(m_log_mode)&static_cast<int>(LogMode::MODE_SERIAL)) &&
+        0!=(static_cast<int>(filter)&static_cast<int>(LogMode::MODE_SERIAL))) {
       Serial.println((level_string+msg).c_str());
     }
 
-    if (m_log_mode==LogMode::MODE_MQTT || m_log_mode==LogMode::MODE_SERIAL_AND_MQTT) {
+    if (0!=(static_cast<int>(m_log_mode)&static_cast<int>(LogMode::MODE_MQTT)) &&
+        0!=(static_cast<int>(filter)&static_cast<int>(LogMode::MODE_MQTT))) {
       Drivhus::getMQTT()->log(level_string+msg);
     }
   }

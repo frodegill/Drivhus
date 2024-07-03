@@ -75,6 +75,4 @@ void loop() {
   for (auto component : g_components) {
     component->loop();
   }
-
-  delay(200);
 }

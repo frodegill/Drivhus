@@ -14,9 +14,9 @@ Drivhus::Growlight::Growlight(uint8_t pin)
 : Drivhus::Component(),
   Drivhus::OnValueChangeListener(),
   m_pin(pin),
+  m_activated(false),
   m_sunrise(0.0f),
-  m_sunset(0.0f),
-  m_activated(false)
+  m_sunset(0.0f)
 {
   Drivhus::getSettings()->addValueChangeListener(this);
 }
@@ -34,7 +34,7 @@ void Drivhus::Growlight::loop() {
     if (m_sunrise == m_sunset) {
       within_growlight_period = false;
     } else {
-      float day_pos = local_tm->tm_hour*60 + local_tm->tm_min + local_tm->tm_sec/60.0;
+      float day_pos = static_cast<float>(local_tm->tm_hour)*60.0f + static_cast<float>(local_tm->tm_min) + static_cast<float>(local_tm->tm_sec)/60.0f;
       bool within_growlight_period = (day_pos>=m_sunrise && day_pos<=m_sunset);
       if (m_sunrise > m_sunset) {
         within_growlight_period = !within_growlight_period;

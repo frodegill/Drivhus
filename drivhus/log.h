@@ -28,7 +28,8 @@ public:
     MODE_NONE=0,
     MODE_SERIAL=1<<0,
     MODE_MQTT=1<<1,
-    MODE_SERIAL_AND_MQTT=MODE_SERIAL|MODE_MQTT
+    MODE_SERIAL_AND_MQTT=MODE_SERIAL|MODE_MQTT,
+    MODE_ALL=MODE_SERIAL|MODE_MQTT
   };
 
 public:
@@ -44,7 +45,7 @@ public:
   void setLogLevel(LogLevel log_level);
   void setLogMode(LogMode log_mode);
 
-  void print(LogLevel level, const std::string& msg);
+  void print(LogLevel level, const std::string& msg, LogMode filter=LogMode::MODE_ALL);
 
 public:
   LogLevel m_log_level;
