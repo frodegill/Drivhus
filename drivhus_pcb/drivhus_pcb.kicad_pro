@@ -507,7 +507,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "/tmp/drivhus/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",
