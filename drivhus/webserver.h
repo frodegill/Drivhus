@@ -4,7 +4,9 @@
 #ifdef TESTING
 # include "testing.h"
 #else
-# include <ESPAsyncWebSrv.h>
+# include <AsyncTCP.h>
+# include <WiFi.h>
+# include <ESPAsyncWebServer.h>
 #endif
 
 #include <list>
@@ -22,8 +24,8 @@ class WebServer : public Component, public OnValueChangeListener, public OnConfi
 {
 public:
   static constexpr unsigned long WARNING_MESSAG_DELAY_MS = 5000L;
-  static constexpr unsigned long RELAY_TEST_DELAY_MS = 200L;
-  static constexpr unsigned long RELAY_TEST_ON_MS = WebServer::WARNING_MESSAG_DELAY_MS;
+  static constexpr unsigned long WATERPUMPS_TEST_DELAY_MS = 200L;
+  static constexpr unsigned long WATERPUMPS_TEST_ON_MS = WebServer::WARNING_MESSAG_DELAY_MS;
 
 public:
   WebServer();
@@ -58,13 +60,10 @@ private:
 
   void textAll(const std::string& key, const std::string& data);
   void updateSensor(uint8_t sensor_id);
-  void updateNewSensorIdButtons(uint8_t sensor_id);
   void updateGrowlightTime();
 
   [[nodiscard]] std::string getSensorValueAsString(uint8_t sensor_id) const;
-  [[nodiscard]] std::string getUnusedSensorIdsAsString() const;
-  [[nodiscard]] uint8_t getUnusedSensorId() const; //Returns the ID if one, and only one, sensor is within the range. UNDEFINED_ID if not.
-  [[nodiscard]] std::string generateSensorSelectOptions(uint8_t sensor_id) const;
+  [[nodiscard]] std::string generateSensorControl(uint8_t sensor_id) const;
   [[nodiscard]] std::string generateOutdoorHumidityAsString() const;
   [[nodiscard]] std::string generateVoltMultiplierCalibration() const;
   [[nodiscard]] std::string generateTimezoneSelectOptions() const;
@@ -72,9 +71,9 @@ private:
   void checkIfWarningMessageShouldBeShown();
   void showWarningMessage(const std::string& msg);
 
-  void activateRelayTests();
-  void updateRelayTest();
-  bool activateTestRelay(bool turn_on);
+  void activateWaterpumpsTests();
+  void updateWaterpumpsTest();
+  bool activateTestWaterpumps(bool turn_on);
 
 private:
   std::unique_ptr<AsyncWebServer> m_server;
@@ -95,10 +94,10 @@ private:
   std::recursive_mutex m_warning_messages_mutex;
   unsigned long m_warning_message_time;
 
-  bool m_is_testing_relays;
-  unsigned long m_relay_test_event_time;
-  uint8_t m_relay_test_index;
-  bool m_relay_test_on;
+  bool m_is_testing_waterpumps;
+  unsigned long m_waterpumps_test_event_time;
+  uint8_t m_waterpumps_test_index;
+  bool m_waterpumps_test_on;
 };
 
 } //namespace

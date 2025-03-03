@@ -6,11 +6,38 @@
 #include <sstream>
 
 #include "global.h"
-#include "cd74hc4067.h"
 #include "network.h"
-#include "rs485.h"
 #include "settings.h"
+#include "soilsensors.h"
+#include "waterpumps.h"
 
+// A = PreProcessor "SHOW SETUP"
+// B = PreProcessor "SSID"
+// C = PreProcessor "SSID_PASSWORD"
+// D = PreProcessor "MQTT_SERVER"
+// E = PreProcessor "MQTT_PORT"
+// F = PreProcessor "MQTT_ID"
+// G = PreProcessor "MQTT_USERNAME"
+// H = PreProcessor "MQTT_PASSWORD"
+// I = PreProcessor "TimeZone Options"
+// J = PreProcessor "Emulate Latitude"
+// K = PreProcessor "Emulate Longitude"
+// l = PreProcessor "Sensor Value"
+// m = PreProcessor "Sensor Enable/Disable"
+// N = "Indoor temp"
+// O = "Indoor humidity"
+// P = "Indoor light"
+// Q = "Outdoor temp"
+// R = "Outdoor humidity"
+// S = "Water low trigger"
+// T = "Water high trigger"
+// U = "Water valve"
+// V = "Volt"
+// W = PreProcessor "Volt multiplier"
+// X = "Growlight time"
+// Y = unused
+// Z = "Volt multiplier"
+// z = "Sensor Enable"
 
 const char index_html[] PROGMEM = R"rawliteral(
 <!doctype html>
@@ -28,51 +55,50 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
 <div id="MSG" hidden></div>
-<div id="SETUP" %SHOW_SETUP%>
-SSID:<input type="text" id="SSID" required maxlength="32" autofocus value="%SSID%"><br>
-SSID Password:<input type="password" id="SSID_PASSWORD" maxlength="64" value="%SSID_PASSWORD%"><br>
-MQTT server:<input type="text" id="MQTT_SERVER" maxlength="64" value="%MQTT_SERVER%"><br>
-MQTT port:<input type="number" id="MQTT_PORT" min="0" max="65535" value="%MQTT_PORT%"><br>
-MQTT ID postfix:<input type="text" id="MQTT_ID" maxlength="32" value="%MQTT_ID%"><br>
-MQTT username:<input type="text" id="MQTT_USERNAME" maxlength="32" value="%MQTT_USERNAME%"><br>
-MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%MQTT_PASSWORD%"><br>
-Timezone:<select id="TZ">%TZO%</select><br>
-Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max="90" value="%EM_LATITUDE%">N/S <input type="number" id="EM_LONGITUDE" min="-180" max="180" value="%EM_LONGITUDE%">E/W<br>
-<button onClick="updateSetup()">Submit</button> <button onClick="testRelays()">Test relays</button>
+<div id="SETUP" %A%>
+SSID:<input type="text" id="SSID" required maxlength="32" autofocus value="%B%"><br>
+SSID Password:<input type="password" id="SSID_PASSWORD" maxlength="64" value="%C%"><br>
+MQTT server:<input type="text" id="MQTT_SERVER" maxlength="64" value="%D%"><br>
+MQTT port:<input type="number" id="MQTT_PORT" min="0" max="65535" value="%E%"><br>
+MQTT ID postfix:<input type="text" id="MQTT_ID" maxlength="32" value="%F%"><br>
+MQTT username:<input type="text" id="MQTT_USERNAME" maxlength="32" value="%G%"><br>
+MQTT password:<input type="password" id="MQTT_PASSWORD" maxlength="32" value="%H%"><br>
+Timezone:<select id="TZ">%I%</select><br>
+Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max="90" value="%J%">N/S <input type="number" id="EM_LONGITUDE" min="-180" max="180" value="%K%">E/W<br>
+<button onClick="updateSetup()">Submit</button> <button onClick="testWaterpumps()">Test waterpumps</button>
 <hr>
 </div>
 <div>
 <table>
-<tr><th><div>Sensor ID</div><div>Scanning:<span id="CSI"></span></div></th><th>Moisture %%</th></tr>
-<tr><td>1</td><td><span id="SV01">%SV01%</span>&nbsp;<span id="NS01">%NS01%</span></td></tr>
-<tr><td>2</td><td><span id="SV02">%SV02%</span>&nbsp;<span id="NS02">%NS02%</span></td></tr>
-<tr><td>3</td><td><span id="SV03">%SV03%</span>&nbsp;<span id="NS03">%NS03%</span></td></tr>
-<tr><td>4</td><td><span id="SV04">%SV04%</span>&nbsp;<span id="NS04">%NS04%</span></td></tr>
-<tr><td>5</td><td><span id="SV05">%SV05%</span>&nbsp;<span id="NS05">%NS05%</span></td></tr>
-<tr><td>6</td><td><span id="SV06">%SV06%</span>&nbsp;<span id="NS06">%NS06%</span></td></tr>
-<tr><td>7</td><td><span id="SV07">%SV07%</span>&nbsp;<span id="NS07">%NS07%</span></td></tr>
-<tr><td>8</td><td><span id="SV08">%SV08%</span>&nbsp;<span id="NS08">%NS08%</span></td></tr>
-<tr><td>9</td><td><span id="SV09">%SV09%</span>&nbsp;<span id="NS09">%NS09%</span></td></tr>
-<tr><td>10</td><td><span id="SV0A">%SV0A%</span>&nbsp;<span id="NS0A">%NS0A%</span></td></tr>
-<tr><td>11</td><td><span id="SV0B">%SV0B%</span>&nbsp;<span id="NS0B">%NS0B%</span></td></tr>
-<tr><td>12</td><td><span id="SV0C">%SV0C%</span>&nbsp;<span id="NS0C">%NS0C%</span></td></tr>
-<tr><td>13</td><td><span id="SV0D">%SV0D%</span>&nbsp;<span id="NS0D">%NS0D%</span></td></tr>
-<tr><td>14</td><td><span id="SV0E">%SV0E%</span>&nbsp;<span id="NS0E">%NS0E%</span></td></tr>
-<tr><td>15</td><td><span id="SV0F">%SV0F%</span>&nbsp;<span id="NS0F">%NS0F%</span></td></tr>
-<tr><td id="SIX">%SIX%</td><td>Unused (ID needs to be 1 to 15)&nbsp;<span id="NIX">%NIX%</span></td></tr>
+<tr><th><div>Sensor ID</div></th><th>Moisture %%</th></tr>
+<tr><td>1</td><td><span id="lA">%lA%</span>&nbsp;<span id="mA">%mA%</span></td></tr>
+<tr><td>2</td><td><span id="lB">%lB%</span>&nbsp;<span id="mB">%mB%</span></td></tr>
+<tr><td>3</td><td><span id="lC">%lC%</span>&nbsp;<span id="mC">%mC%</span></td></tr>
+<tr><td>4</td><td><span id="lD">%lD%</span>&nbsp;<span id="mD">%mD%</span></td></tr>
+<tr><td>5</td><td><span id="lE">%lE%</span>&nbsp;<span id="mE">%mE%</span></td></tr>
+<tr><td>6</td><td><span id="lF">%lF%</span>&nbsp;<span id="mF">%mF%</span></td></tr>
+<tr><td>7</td><td><span id="lG">%lG%</span>&nbsp;<span id="mG">%mG%</span></td></tr>
+<tr><td>8</td><td><span id="lH">%lH%</span>&nbsp;<span id="mH">%mH%</span></td></tr>
+<tr><td>9</td><td><span id="lI">%lI%</span>&nbsp;<span id="mI">%mI%</span></td></tr>
+<tr><td>10</td><td><span id="lJ">%lJ%</span>&nbsp;<span id="mJ">%mJ%</span></td></tr>
+<tr><td>11</td><td><span id="lK">%lK%</span>&nbsp;<span id="mK">%mK%</span></td></tr>
+<tr><td>12</td><td><span id="lL">%lL%</span>&nbsp;<span id="mL">%mL%</span></td></tr>
+<tr><td>13</td><td><span id="lM">%lM%</span>&nbsp;<span id="mM">%mM%</span></td></tr>
+<tr><td>14</td><td><span id="lN">%lN%</span>&nbsp;<span id="mN">%mN%</span></td></tr>
+<tr><td>15</td><td><span id="lO">%lO%</span>&nbsp;<span id="mO">%mO%</span></td></tr>
 </table>
 <table>
 <tr><th>Sensor</th><th>Value</th></tr>
-<tr><td>Indoor temp</td><td><span id="ITEMP">%ITEMP%</span><span>&nbsp;C</span></td></tr>
-<tr><td>Indoor humidity</td><td><span id="IHUMID">%IHUMID%</span><span>&nbsp;%%RH</span></td></tr>
-<tr><td>Indoor light</td><td><span id="ILIGHT">%ILIGHT%</span><span>&nbsp;%%</span></td></tr>
-<tr><td>Outdoor temp</td><td><span id="OTEMP">%OTEMP%</span><span>&nbsp;C</span></td></tr>
-<tr><td>Outdoor humidity</td><td><span id="OHUMID">%OHUMID%</span></td></tr>
-<tr><td>Water Low Trigger</td><td><span id="WLL">%WLL%</span></td></tr>
-<tr><td>Water High Trigger</td><td><span id="WLH">%WLH%</span></td></tr>
-<tr><td>Water Valve</td><td><span id="WV">%WV%</span></td></tr>
-<tr><td>Voltage</td><td><span id="VOLT">%VOLT%</span><span>&nbsp;V</span><span id="VM">%VM%</span></td></tr>
-<tr><td>Growlight time</td><td><span id="GT">%GT%</span></td></tr>
+<tr><td>Indoor temp</td><td><span id="N">%N%</span><span>&nbsp;C</span></td></tr>
+<tr><td>Indoor humidity</td><td><span id="O">%O%</span><span>&nbsp;%%RH</span></td></tr>
+<tr><td>Indoor light</td><td><span id="P">%P%</span><span>&nbsp;%%</span></td></tr>
+<tr><td>Outdoor temp</td><td><span id="Q">%Q%</span><span>&nbsp;C</span></td></tr>
+<tr><td>Outdoor humidity</td><td><span id="R">%R%</span></td></tr>
+<tr><td>Water Low Trigger</td><td><span id="S">%S%</span></td></tr>
+<tr><td>Water High Trigger</td><td><span id="T">%T%</span></td></tr>
+<tr><td>Water Valve</td><td><span id="U">%U%</span></td></tr>
+<tr><td>Voltage</td><td><span id="V">%V%</span><span>&nbsp;V</span><span id="W">%W%</span></td></tr>
+<tr><td>Growlight time</td><td><span id="X">%X%</span></td></tr>
 </table>
 </div>
 </body>
@@ -89,21 +115,13 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
   function onOpen(event){}
   function onClose(event){setTimeout(initWebSocket, 2000);}
   function onMessage(event) {
-    if (event.data.startsWith('VM') || event.data.startsWith('GT') || event.data.startsWith('WV')){
+    if (-1!="NOPQRSTUVWX".indexOf(event.data.substring(0,1))){
+      document.getElementById(event.data.substring(0,1)).innerHTML = event.data.substring(1);
+    } else if (-1!="lm".indexOf(event.data.substring(0,1))){
       document.getElementById(event.data.substring(0,2)).innerHTML = event.data.substring(2);
-    } else if (event.data.startsWith('SV') || event.data.startsWith('NS')){
-      document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
-    } else if (event.data.startsWith('CSI') || event.data.startsWith('SIX') || event.data.startsWith('NIX') || event.data.startsWith('WLL') || event.data.startsWith('WLH')){
-      document.getElementById(event.data.substring(0,3)).innerHTML = event.data.substring(3);
-    } else if (event.data.startsWith('VOLT')){
-      document.getElementById(event.data.substring(0,4)).innerHTML = event.data.substring(4);
-    } else if (event.data.startsWith('ITEMP') || event.data.startsWith('OTEMP')){
-      document.getElementById(event.data.substring(0,5)).innerHTML = event.data.substring(5);
-    } else if (event.data.startsWith('IHUMID') || event.data.startsWith('ILIGHT') || event.data.startsWith('OHUMID')){
-      document.getElementById(event.data.substring(0,6)).innerHTML = event.data.substring(6);
-    } else if (event.data.startsWith('SHOW_SETUP')){
+    } else if (event.data.startsWith('A')){
       var elm = document.getElementById('SETUP');
-      if (event.data.length == 10) { //'SHOW_SETUP' with no value
+      if (event.data.length == 1) { //'A' with no value
         elm.removeAttribute('hidden');
       } else {
         elm.setAttribute('hidden', 'hidden')
@@ -123,9 +141,8 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
   function onLoad(event){initWebSocket();}
   function updateSetup(){websocket.send('SETUP'+elmValue('SSID')+'\n'+elmValue('SSID_PASSWORD')+'\n'+elmValue('MQTT_SERVER')+'\n'+elmValue('MQTT_PORT')+'\n'+elmValue('MQTT_ID')+'\n'+elmValue('MQTT_USERNAME')+'\n'+elmValue('MQTT_PASSWORD')+'\n'
     +elmValue('TZ')+'\n'+elmValue('EM_LATITUDE')+'\n'+elmValue('EM_LONGITUDE'));}
-  function testRelays(){websocket.send('TR');}
-  function updateSensorId(sensorIdHex){websocket.send('NSI'+sensorIdHex+elmValue('SO'+sensorIdHex));}
-  function updateVoltMultiplier(){websocket.send('VM'+elmValue('VOLT_MULTIPLIER'));}
+  function testWaterpumps(){websocket.send('TP');}
+  function updateVoltMultiplier(){websocket.send('W'+elmValue('Z'));}
   function elmValue(elmId){return document.getElementById(elmId).value;}
 </script>
 </html>
@@ -138,10 +155,10 @@ Drivhus::WebServer::WebServer()
   Drivhus::OnConfigChangeListener(),
   m_is_showing_setup(false),
   m_warning_message_time(0L),
-  m_is_testing_relays(false),
-  m_relay_test_event_time(0L),
-  m_relay_test_index(0),
-  m_relay_test_on(false)
+  m_is_testing_waterpumps(false),
+  m_waterpumps_test_event_time(0L),
+  m_waterpumps_test_index(0),
+  m_waterpumps_test_on(false)
 {
   Drivhus::getSettings()->addValueChangeListener(this);
   Drivhus::getSettings()->addConfigChangeListener(this);
@@ -178,8 +195,8 @@ void Drivhus::WebServer::loop() {
     m_warning_message_time = current_time;
   }
 
-  if (m_is_testing_relays) {
-    updateRelayTest();
+  if (m_is_testing_waterpumps) {
+    updateWaterpumpsTest();
   }
 
   if (m_warning_message_time!=0L) {
@@ -211,17 +228,17 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       float value = Drivhus::getSettings()->getIndoorTemp();
       if (value<(m_temp[0]*0.99f) || value>(m_temp[0]*1.01f)) {
           m_temp[0] = value;
-          notifyClients("ITEMP", String(value, 1).c_str());
+          notifyClients("N", String(value, 1).c_str());
       }
       value = Drivhus::getSettings()->getIndoorHumidity();
       if (value<(m_humid[0]*0.99f) || value>(m_humid[0]*1.01f)) {
         m_humid[0]=value;
-        notifyClients("IHUMID", String(value, 1).c_str());
+        notifyClients("O", String(value, 1).c_str());
       }
       value = Drivhus::getSettings()->getOutdoorTemp();
       if (value<(m_temp[1]*0.99f) || value>(m_temp[1]*1.01f)) {
         m_temp[1]=value;
-        notifyClients("OTEMP", String(value, 1).c_str());
+        notifyClients("Q", String(value, 1).c_str());
       }
       value = Drivhus::getSettings()->getOutdoorHumidity();
       float value2 = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
@@ -230,15 +247,19 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
           (value2!=NAN && (value2<(m_humid[2]*0.99f) || value2>(m_humid[2]*1.01f)))) {
         m_humid[1]=value;
         m_humid[2]=value2;
-        notifyClients("OHUMID", generateOutdoorHumidityAsString().c_str());
+        notifyClients("R", generateOutdoorHumidityAsString().c_str());
       }
+      break;
+    }
+    case Drivhus::OnValueChangeListener::Type::PLANT_MOISTURE: {
+      updateSensor(plant_id);
       break;
     }
     case Drivhus::OnValueChangeListener::Type::LIGHT: {
       float value = Drivhus::getSettings()->getLight();
       if (value<(m_light*0.99f) || value>(m_light*1.01f)) {
         m_light=value;
-        notifyClients("ILIGHT", String(value, 1).c_str());
+        notifyClients("P", String(value, 1).c_str());
       }
       break;
     }
@@ -246,20 +267,20 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       float value = Drivhus::getSettings()->getVolt();
       if (value<(m_volt*0.99f) || value>(m_volt*1.01f)) {
         m_volt=value;
-        notifyClients("VOLT", String(value, 2).c_str());
+        notifyClients("V", String(value, 2).c_str());
       }
       break;
     }
     case Drivhus::OnValueChangeListener::Type::WATER_LOW_TRIGGER: {
-      notifyClients("WLL", Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
+      notifyClients("S", Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
       break;
     }
     case Drivhus::OnValueChangeListener::Type::WATER_HIGH_TRIGGER: {
-      notifyClients("WLH", Drivhus::getSettings()->getWaterHighTrigger()==LOW ? "Inactive" : "Active");
+      notifyClients("T", Drivhus::getSettings()->getWaterHighTrigger()==LOW ? "Inactive" : "Active");
       break;
     }
     case Drivhus::OnValueChangeListener::Type::WATER_VALVE: {
-      notifyClients("WV", Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
+      notifyClients("U", Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
       break;
     }
     case Drivhus::OnValueChangeListener::Type::SUNRISE: {
@@ -272,12 +293,6 @@ void Drivhus::WebServer::onValueChanged(Drivhus::OnValueChangeListener::Type typ
       updateGrowlightTime();
       break;
     }
-    case Drivhus::OnValueChangeListener::Type::SENSOR_SCAN_ENDED:
-      notifyClients("CSI", "-");
-      break;
-    case Drivhus::OnValueChangeListener::Type::SENSOR_UPDATED:
-      updateSensor(plant_id);
-      break;
 
     default: break;
   };
@@ -290,15 +305,11 @@ void Drivhus::WebServer::onConfigChanged(Drivhus::OnConfigChangeListener::Type t
         bool tmp = Drivhus::getSettings()->getIsInSetupMode();
         if (m_is_showing_setup!=tmp) {
           m_is_showing_setup = tmp;
-          notifyClients("SHOW_SETUP", m_is_showing_setup ? "" : "hidden");
-          for (uint8_t sensor_id=RS485::DRIVHUS_MIN_ID; sensor_id<=RS485::DRIVHUS_MAX_ID; sensor_id++) {
-            updateNewSensorIdButtons(sensor_id);
+          notifyClients("A", m_is_showing_setup ? "" : "hidden");
+          for (uint8_t sensor_id=Drivhus::SoilSensors::MIN_ID; sensor_id<=Drivhus::SoilSensors::MAX_ID; sensor_id++) {
+            notifyClients(std::string("m")+std::to_string('A'+sensor_id), generateSensorControl(sensor_id));
           }
-          uint8_t unused_sensor_id = getUnusedSensorId();
-          if (unused_sensor_id != RS485::UNDEFINED_ID) {
-            updateNewSensorIdButtons(unused_sensor_id);
-          }
-          notifyClients("VM", generateVoltMultiplierCalibration());
+          notifyClients("W", generateVoltMultiplierCalibration());
         }
       }
       break;
@@ -339,16 +350,10 @@ void Drivhus::WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t
         }
       }
       Drivhus::getSettings()->setShouldFlushSettings();
-    } else if (len>=2 && std::strncmp("TR", data_str, 2)==0) {
-      Drivhus::getWebServer()->activateRelayTests();
-    } else if (len>=(3+2+2) && std::strncmp("NSI", data_str, 3)==0) {
-      std::string s(data_str+3, 4);
-      unsigned long value = std::stoul(s, nullptr, 16);
-      uint8_t old_id = (value&0xFF00)>>8;
-      uint8_t new_id = (value&0x00FF);
-      Drivhus::getRS485()->setSensorShouldBeReassigned(old_id, new_id);
-    } else if (std::strncmp("VM", data_str, 2)==0) {
-      float value = std::stof(std::string(data_str+2));
+    } else if (len>=2 && std::strncmp("TP", data_str, 2)==0) {
+      Drivhus::getWebServer()->activateWaterpumpsTests();
+    } else if (*data_str=='W') {
+      float value = std::stof(std::string(data_str+1));
       Drivhus::getSettings()->setVoltMultiplier(value/Volt::MAX_VOLT);
       Drivhus::getSettings()->setShouldFlushSettings();
     }
@@ -360,62 +365,60 @@ void Drivhus::WebServer::notifyClients(const std::string& key, const std::string
 }
 
 String Drivhus::WebServer::processor(const String& var){
-  if (var == "SHOW_SETUP") {
+  if (var == "A") {
     return Drivhus::getSettings()->getIsInSetupMode() ? "" : "hidden";
-  } else if (var == "SIX") {
-    return String(Drivhus::getWebServer()->getUnusedSensorIdsAsString().c_str());
-  } else if (var == "NIX") {
-    uint8_t sensor_id = Drivhus::getWebServer()->getUnusedSensorId();
-    return String(Drivhus::getWebServer()->generateSensorSelectOptions(sensor_id).c_str());
-  } else if (var.startsWith("SV")) {
-    uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
+  } else if (var.startsWith("l") && var.length()>=2) {
+    uint8_t sensor_id = var[1]-'A';
     return String(Drivhus::getWebServer()->getSensorValueAsString(sensor_id).c_str());
-  } else if (var.startsWith("NS")) {
-    uint8_t sensor_id = static_cast<uint8_t>(std::stoul(var.substring(2).c_str(), nullptr, 16)&0xFF);
-    return String(Drivhus::getWebServer()->generateSensorSelectOptions(sensor_id).c_str());
-  } else if (var == "ITEMP") {
+  } else if (var.startsWith("m") && var.length()>=2) {
+    uint8_t sensor_id = var[1]-'A';
+    return String(Drivhus::getWebServer()->generateSensorControl(sensor_id).c_str());
+  } else if (var == "N") {
     return String(Drivhus::getWebServer()->getIndoorTemp(), 1);
-  } else if (var == "IHUMID") {
+  } else if (var == "O") {
     return String(Drivhus::getWebServer()->getIndoorHumid(), 1);
-  } else if (var == "ILIGHT") {
+  } else if (var == "P") {
     return String(Drivhus::getWebServer()->getLight(), 1);
-  } else if (var == "OTEMP") {
+  } else if (var == "Q") {
     return String(Drivhus::getWebServer()->getOutdoorTemp(), 1);
-  } else if (var == "OHUMID") {
+  } else if (var == "R") {
     return String(Drivhus::getWebServer()->generateOutdoorHumidityAsString().c_str());
-  } else if (var == "WLL") {
+  } else if (var == "S") {
     return String(Drivhus::getSettings()->getWaterLowTrigger()==LOW ? "Inactive" : "Active");
-  } else if (var == "WLH") {
+  } else if (var == "T") {
     return String(Drivhus::getSettings()->getWaterHighTrigger()==LOW ? "Inactive" : "Active");
-  } else if (var == "WV") {
+  } else if (var == "U") {
     return String(Drivhus::getSettings()->getWaterValveStatus()==Drivhus::ValveStatus::OPEN ? "Open" : "Closed");
-  } else if (var == "VOLT") {
+  } else if (var == "V") {
     return String(Drivhus::getWebServer()->getVolt(), 2);
-  } else if (var == "VM") {
+  } else if (var == "W") {
     return String(Drivhus::getWebServer()->generateVoltMultiplierCalibration().c_str());
-  } else if (var == "GT") {
+  } else if (var == "X") {
     return String(Drivhus::getWebServer()->getGrowlightTime().c_str());
   } else if (Drivhus::getSettings()->getIsInSetupMode()) {
-    if (var == "SSID") {
+    if (var == "B") {
       return String(Drivhus::getSettings()->getSSID().c_str());
-    } else if (var == "SSID_PASSWORD") {
+    } else if (var == "C") {
       return String(Drivhus::getSettings()->getSSIDPassword().c_str());
-    } else if (var == "MQTT_SERVER") {
+    } else if (var == "D") {
       return String(Drivhus::getSettings()->getMQTTServername().c_str());
-    } else if (var == "MQTT_PORT") {
+    } else if (var == "E") {
       return String(Drivhus::getSettings()->getMQTTPort());
-    } else if (var == "MQTT_ID") {
+    } else if (var == "F") {
       return String(Drivhus::getSettings()->getMQTTServerId().c_str());
-    } else if (var == "MQTT_USERNAME") {
+    } else if (var == "G") {
       return String(Drivhus::getSettings()->getMQTTUsername().c_str());
-    } else if (var == "MQTT_PASSWORD") {
+    } else if (var == "H") {
       return String(Drivhus::getSettings()->getMQTTPassword().c_str());
-    } else if (var == "TZO") {
+    } else if (var == "I") {
       return String(Drivhus::getWebServer()->generateTimezoneSelectOptions().c_str());
-    } else if (var == "EM_LATITUDE") {
+    } else if (var == "J") {
       return String(Drivhus::getSettings()->getEmulateLatitude());
-    } else if (var == "EM_LONGITUDE") {
+    } else if (var == "K") {
       return String(Drivhus::getSettings()->getEmulateLongitude());
+    } else if (var.startsWith("z") && var.length()>=2) {
+      uint8_t sensor_id = var[1]-'A';
+      return String(Drivhus::getSettings()->getEnabled(sensor_id)?"checked":"");
     }
   }
 #if 0
@@ -429,38 +432,8 @@ void Drivhus::WebServer::textAll(const std::string& key, const std::string& data
 }
 
 void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
-  bool present = Drivhus::getRS485()->isSensorPresent(sensor_id);
-  if (present && m_present_sensors.find(sensor_id) == m_present_sensors.end()) {
-    m_present_sensors.emplace(sensor_id);
-  } else if (!present && m_present_sensors.find(sensor_id) != m_present_sensors.end()) {
-    m_present_sensors.erase(sensor_id);
-  }
-
-  if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
-    notifyClients(std::string("SV")+Drivhus::uint8ToHex(sensor_id), getSensorValueAsString(sensor_id));
-    updateNewSensorIdButtons(sensor_id);
-  } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID && present) {
-    notifyClients("SIX", getUnusedSensorIdsAsString().c_str());
-    updateNewSensorIdButtons(sensor_id);
-  }
-
-  notifyClients("CSI", std::to_string(sensor_id)); //Current Sensor ID
-}
-
-void Drivhus::WebServer::updateNewSensorIdButtons(uint8_t sensor_id) {
-  if (sensor_id>=RS485::DRIVHUS_MIN_ID && sensor_id<=RS485::DRIVHUS_MAX_ID) {
-    if (!Drivhus::getSettings()->getIsInSetupMode() || !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
-      notifyClients(std::string("NS")+Drivhus::uint8ToHex(sensor_id), "");
-    } else {
-      notifyClients(std::string("NS")+Drivhus::uint8ToHex(sensor_id), generateSensorSelectOptions(sensor_id));
-    }
-  } else if (sensor_id>=RS485::MIN_ID && sensor_id<=RS485::MAX_ID) {
-    uint8_t sensor_id = getUnusedSensorId();
-    if (!Drivhus::getSettings()->getIsInSetupMode() || sensor_id == RS485::UNDEFINED_ID) {
-      notifyClients("NIX", "");
-    } else {
-      notifyClients("NIX", generateSensorSelectOptions(sensor_id));
-    }
+  if (sensor_id>=Drivhus::SoilSensors::MIN_ID && sensor_id<=Drivhus::SoilSensors::MAX_ID) {
+    notifyClients(std::string("l")+std::to_string('A'+sensor_id), getSensorValueAsString(sensor_id));
   }
 }
 
@@ -480,12 +453,12 @@ void Drivhus::WebServer::updateGrowlightTime() {
   ss << std::setw(2) << std::setfill('0') << std::to_string(to_minutes);
 
   m_growlight_time = ss.str();
-  notifyClients("GT", m_growlight_time);
+  notifyClients("X", m_growlight_time);
 }
 
 std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const {
-  if (!Drivhus::getRS485()->isSensorPresent(sensor_id)) {
-    return "Not available";
+  if (!Drivhus::getSettings()->getEnabled(sensor_id)) {
+    return "Disabled";
   }
   std::stringstream ss;
   ss << Drivhus::floatToString(Drivhus::getSettings()->getPlantMoisture(sensor_id), 2);
@@ -497,50 +470,12 @@ std::string Drivhus::WebServer::getSensorValueAsString(uint8_t sensor_id) const 
   return ss.str();
 }
 
-std::string Drivhus::WebServer::getUnusedSensorIdsAsString() const {
+std::string Drivhus::WebServer::generateSensorControl(uint8_t sensor_id) const {
   std::stringstream ss;
-  for (uint8_t item: m_present_sensors) {
-    if (item>=RS485::MIN_ID && item<=RS485::MAX_ID &&
-        !(item>=RS485::DRIVHUS_MIN_ID && item<=RS485::DRIVHUS_MAX_ID)) {
-      if (ss.tellp() != std::streampos(0)) {
-        ss << ',';
-      }
-      ss << std::to_string(item);
-    }
+  if (Drivhus::getSettings()->getIsInSetupMode())
+  {
+    ss << "<input type=\"checkbox\" id=\"z" << ('A'+sensor_id) << "\" onChange=\"toggleSensor(this)\" %z" << ('A'+sensor_id) << "%>";
   }
-  return ss.str();
-}
-
-uint8_t Drivhus::WebServer::getUnusedSensorId() const {
-  uint8_t sensor_id = RS485::UNDEFINED_ID;
-  for (uint8_t item: m_present_sensors) {
-    if (item>=RS485::MIN_ID && item<=RS485::MAX_ID &&
-        !(item>=RS485::DRIVHUS_MIN_ID && item<=RS485::DRIVHUS_MAX_ID)) {
-      if (sensor_id != RS485::UNDEFINED_ID) {
-        return RS485::UNDEFINED_ID;
-      } else {
-        sensor_id = item;
-      }
-    }
-  }
-  return sensor_id;
-}
-
-std::string Drivhus::WebServer::generateSensorSelectOptions(uint8_t sensor_id) const {
-  if (!Drivhus::getSettings()->getIsInSetupMode() ||
-      sensor_id<RS485::MIN_ID || sensor_id>RS485::MAX_ID ||
-      !Drivhus::getRS485()->isSensorPresent(sensor_id)) {
-    return "";
-  }
-
- std::stringstream ss;
-  ss << "&nbsp;<select id=\"SO" << Drivhus::uint8ToHex(sensor_id) << "\">"; //Sensor ID Option
-  for (uint8_t i=RS485::DRIVHUS_MIN_ID; i<=RS485::DRIVHUS_MAX_ID; i++) {
-    if (m_present_sensors.find(i) == m_present_sensors.end()) {
-      ss << "<option value=\"" << Drivhus::uint8ToHex(i) << "\">" << std::to_string(i) << "</option>";
-    }
-  }
-  ss << "</select><button onCLick=\"updateSensorId('" << Drivhus::uint8ToHex(sensor_id) << "')\">Set new sensor ID</button>";
   return ss.str();
 }
 
@@ -554,11 +489,10 @@ std::string Drivhus::WebServer::generateOutdoorHumidityAsString() const {
 }
 
 std::string Drivhus::WebServer::generateVoltMultiplierCalibration() const {
-  if (!Drivhus::getSettings()->getIsInSetupMode()) {
-    return "";
-  }
-
-  return "&nbsp;<input type=\"number\" id=\"VOLT_MULTIPLIER\" min=\"0.0\" max=\"14.5\" step=\"0.1\" value=\"%VOLT_MULTIPLIER%\">V <button onCLick=\"updateVoltMultiplier()\">Calibrate</button>";
+  //<tr><td>Voltage</td><td><span id="V">%V%</span><span>&nbsp;V</span><span id="W">%W%</span></td></tr>
+  return Drivhus::getSettings()->getIsInSetupMode() ?
+    "&nbsp;<input type=\"number\" id=\"Z\" min=\"0.0\" max=\"14.5\" step=\"0.1\" value=\"%Z%\">V <button onCLick=\"updateVoltMultiplier()\">Calibrate</button>"
+    : "";
 }
 
 std::string Drivhus::WebServer::generateTimezoneSelectOptions() const {
@@ -583,58 +517,56 @@ void Drivhus::WebServer::showWarningMessage(const std::string& msg) {
   m_warning_message_time = msg.empty() ? 0L : millis();
 }
 
-void Drivhus::WebServer::activateRelayTests() {
-  if (!m_is_testing_relays) {
-    m_is_testing_relays = true;
-    m_relay_test_event_time = millis();
-    m_relay_test_index = 0;
-    m_relay_test_on = false;
+void Drivhus::WebServer::activateWaterpumpsTests() {
+  if (!m_is_testing_waterpumps) {
+    m_is_testing_waterpumps = true;
+    m_waterpumps_test_event_time = millis();
+    m_waterpumps_test_index = 0;
+    m_waterpumps_test_on = false;
   }  
 }
 
-void Drivhus::WebServer::updateRelayTest() {
+void Drivhus::WebServer::updateWaterpumpsTest() {
   const unsigned long current_time = millis();
-  if (current_time < m_relay_test_event_time) { //Time will wrap around every ~50 days. Don't consider this an error
-    m_relay_test_event_time = current_time;
+  if (current_time < m_waterpumps_test_event_time) { //Time will wrap around every ~50 days. Don't consider this an error
+    m_waterpumps_test_event_time = current_time;
   }
 
-  if (!m_relay_test_on && (m_relay_test_event_time+RELAY_TEST_DELAY_MS)<current_time) {
-    if (activateTestRelay(true)) {
-      m_relay_test_event_time = current_time;
-      m_relay_test_on = true;
+  if (!m_waterpumps_test_on && (m_waterpumps_test_event_time+WATERPUMPS_TEST_DELAY_MS)<current_time) {
+    if (activateTestWaterpumps(true)) {
+      m_waterpumps_test_event_time = current_time;
+      m_waterpumps_test_on = true;
     }
-  } else if (m_relay_test_on && (m_relay_test_event_time+RELAY_TEST_ON_MS)<current_time) {
-    if (activateTestRelay(false)) {
-      m_relay_test_event_time = current_time;
-      m_relay_test_on = false;
-      if (++m_relay_test_index >= (15+1+1+1)) {
-        m_is_testing_relays = false;
+  } else if (m_waterpumps_test_on && (m_waterpumps_test_event_time+WATERPUMPS_TEST_ON_MS)<current_time) {
+    if (activateTestWaterpumps(false)) {
+      m_waterpumps_test_event_time = current_time;
+      m_waterpumps_test_on = false;
+      if (++m_waterpumps_test_index >= (15+1+1+1)) {
+        m_is_testing_waterpumps = false;
       }
     }
   }
 }
 
-bool Drivhus::WebServer::activateTestRelay(bool turn_on) {
-  if (m_relay_test_index < 15) {
-    if (!Drivhus::getCD74HC4067()->isBusy()) {
+bool Drivhus::WebServer::activateTestWaterpumps(bool turn_on) {
+  if (m_waterpumps_test_index < Drivhus::SoilSensors::MAX_ID) {
+    if (!Drivhus::getWaterPumps()->isBusy()) {
       if (turn_on) {
-        uint8_t plant_id = m_relay_test_index+1;
-        addWarningMessage(std::string("Testing WaterPump ")+std::to_string(plant_id));
+        uint8_t plant_id = m_waterpumps_test_index+1;
+        addWarningMessage(std::string("Testing Waterpump ")+std::to_string(plant_id));
         Drivhus::getSettings()->setRequestWatering(plant_id);
-        return true;
-      } else {
-        return true; //Relay turns itself off.
       }
+      return true; //Pumps turn themselves off.
     }
-  } else if (m_relay_test_index == 15) {
+  } else if (m_waterpumps_test_index == (15+0)) {
     if (turn_on) addWarningMessage("Testing Fan");
     digitalWrite(O_FAN_PIN, turn_on ? HIGH : LOW);
     return true;
-  } else if (m_relay_test_index == 16) {
+  } else if (m_waterpumps_test_index == (15+1)) {
     if (turn_on) addWarningMessage("Testing GrowLight");
     digitalWrite(O_GROWLIGHT_PIN, turn_on ? HIGH : LOW);
     return true;
-  } else if (m_relay_test_index == 17) {
+  } else if (m_waterpumps_test_index == (15+2)) {
     if (turn_on) addWarningMessage("Testing Water Valve");
     digitalWrite(O_WATER_VALVE_PIN, turn_on ? HIGH : LOW);
     return true;

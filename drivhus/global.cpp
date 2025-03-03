@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "cd74hc4067.h"
 #include "dht22.h"
 #include "fan.h"
 #include "growlight.h"
@@ -17,20 +16,13 @@
 #include "mqtt.h"
 #include "network.h"
 #include "ntp.h"
-#include "rs485.h"
 #include "settings.h"
+#include "soilsensors.h"
 #include "volt.h"
 #include "waterlevel.h"
+#include "waterpumps.h"
 #include "webserver.h"
 
-
-std::shared_ptr<Drivhus::CD74HC4067> g_cd74hc4067;
-[[nodiscard]] std::shared_ptr<Drivhus::CD74HC4067> Drivhus::getCD74HC4067() {
-  if (!g_cd74hc4067) {
-    g_cd74hc4067 = std::make_shared<Drivhus::CD74HC4067>(O_CD74HC4067_S0_PIN, O_CD74HC4067_S1_PIN, O_CD74HC4067_S2_PIN, O_CD74HC4067_S3_PIN, O_CD74HC4067_COMMON_PIN);
-  }
-  return g_cd74hc4067;
-}
 
 std::shared_ptr<Drivhus::DHT22> g_indoor_dht22;
 [[nodiscard]] std::shared_ptr<Drivhus::DHT22> Drivhus::getIndoorDHT22() {
@@ -113,20 +105,24 @@ std::shared_ptr<Drivhus::WebServer> g_webserver;
   return g_webserver;
 }
 
-std::shared_ptr<Drivhus::RS485> g_rs485;
-[[nodiscard]] std::shared_ptr<Drivhus::RS485> Drivhus::getRS485() {
-  if (!g_rs485) {
-    g_rs485 = std::make_shared<Drivhus::RS485>(I_RS485_RX_PIN, O_RS485_TX_PIN, O_RS485_ENABLE_PIN);
-  }
-  return g_rs485;
-}
-
 std::shared_ptr<Drivhus::Settings> g_settings;
 [[nodiscard]] std::shared_ptr<Drivhus::Settings> Drivhus::getSettings() {
   if (!g_settings) {
     g_settings = std::make_shared<Drivhus::Settings>(I_SETUP_MODE_ENABLE_PIN);
   }
   return g_settings;
+}
+
+std::shared_ptr<Drivhus::SoilSensors> g_soilsensors;
+[[nodiscard]] std::shared_ptr<Drivhus::SoilSensors> Drivhus::getSoilSensors() {
+  if (!g_soilsensors) {
+    g_soilsensors = std::make_shared<Drivhus::SoilSensors>(O_SENSORS_CD74HC4067_S0_PIN,
+                                                           O_SENSORS_CD74HC4067_S1_PIN,
+                                                           O_SENSORS_CD74HC4067_S2_PIN,
+                                                           O_SENSORS_CD74HC4067_S3_PIN,
+                                                           O_SENSORS_CD74HC4067_COMMON_PIN);
+  }
+  return g_soilsensors;
 }
 
 std::shared_ptr<Drivhus::Volt> g_volt;
@@ -143,6 +139,18 @@ std::shared_ptr<Drivhus::Waterlevel> g_waterlevel;
     g_waterlevel = std::make_shared<Drivhus::Waterlevel>(I_WATERLEVEL_LOW_PIN, I_WATERLEVEL_HIGH_PIN, O_WATER_VALVE_PIN);
   }
   return g_waterlevel;
+}
+
+std::shared_ptr<Drivhus::WaterPumps> g_waterpumps;
+[[nodiscard]] std::shared_ptr<Drivhus::WaterPumps> Drivhus::getWaterPumps() {
+  if (!g_waterpumps) {
+    g_waterpumps = std::make_shared<Drivhus::WaterPumps>(O_WATERPUMP_CD74HC4067_S0_PIN,
+                                                         O_WATERPUMP_CD74HC4067_S1_PIN,
+                                                         O_WATERPUMP_CD74HC4067_S2_PIN,
+                                                         O_WATERPUMP_CD74HC4067_S3_PIN,
+                                                         O_WATERPUMP_CD74HC4067_COMMON_PIN);
+  }
+  return g_waterpumps;
 }
 
 const Drivhus::TimezoneInfo* Drivhus::getTimezoneInfo(const std::string& timezone) {

@@ -11,6 +11,7 @@
 #include <string>
 
 #include "global.h"
+#include "soilsensors.h"
 
 
 namespace Drivhus {
@@ -30,7 +31,7 @@ public:
   Plant& operator=(const Plant& other);
 };
 
-[[nodiscard]] static constexpr bool isValidPlantId(uint8_t plant_id) {return plant_id>=1 && plant_id<=Drivhus::MAX_PLANT_COUNT;}
+[[nodiscard]] static constexpr bool isValidPlantId(uint8_t plant_id) {return plant_id>=Drivhus::SoilSensors::MIN_ID && plant_id<=Drivhus::SoilSensors::MAX_ID;}
 
 } //namespace
 

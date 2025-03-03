@@ -34,9 +34,6 @@ public:
     FAN,
     SUNRISE,
     SUNSET,
-    SENSOR_SCAN_STARTED,
-    SENSOR_UPDATED,
-    SENSOR_SCAN_ENDED,
     //Types dependent on plant id:
     PLANT_MOISTURE,
     PLANT_IN_WATERING_CYCLE,
@@ -165,9 +162,6 @@ public:
   void setSunset(float value) {if (m_sunset!=value) {m_sunset=value; notifyValueChangeListeners(OnValueChangeListener::Type::SUNSET);}}
   void setWateringStarted(uint8_t plant_id);
   void setWateringEnded(uint8_t plant_id) {if (Drivhus::isValidPlantId(plant_id)) {m_plants[plant_id-1].previous_watering_time=millis(); notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_WATERING_ENDED, plant_id);}}
-  void setSensorScanStarted() {notifyValueChangeListeners(OnValueChangeListener::Type::SENSOR_SCAN_STARTED);}
-  void setSensorUpdated(uint8_t sensor_id) {notifyValueChangeListeners(OnValueChangeListener::Type::SENSOR_UPDATED, sensor_id);}
-  void setSensorScanEnded() {notifyValueChangeListeners(OnValueChangeListener::Type::SENSOR_SCAN_ENDED);}
   [[nodiscard]] float getPlantMoisture(uint8_t plant_id) const {return getEnabled(plant_id) ? m_plants[plant_id-1].current_value : 0.0f;}
   [[nodiscard]] bool getIsInWateringCycle(uint8_t plant_id) const {return getEnabled(plant_id) ? m_plants[plant_id-1].in_watering_cycle : false;}
   [[nodiscard]] bool getIsWateringPlant(uint8_t plant_id) const;
@@ -214,7 +208,6 @@ public:
 private:
   uint8_t m_pin;
 
-public:
   bool m_system_ready;
 
   std::vector<OnValueChangeListener*> m_value_change_listeners;

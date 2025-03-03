@@ -1,0 +1,6 @@
+ArduinoJson	by Bernoit Blanchon
+Async_TCP	by ESP32Async
+DHT_sensor_library_for_ESPx	by beegee_tokyo
+ESPAsyncWebServer	by ESP32Async
+PubSubClient	by Nick O'Leary
+Time	by Michael Margolis

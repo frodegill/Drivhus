@@ -6,7 +6,6 @@
 
 #include "global.h"
 
-#include "cd74hc4067.h"
 #include "dht22.h"
 #include "fan.h"
 #include "growlight.h"
@@ -15,11 +14,12 @@
 #include "mqtt.h"
 #include "network.h"
 #include "ntp.h"
-#include "rs485.h"
 #include "settings.h"
+#include "soilsensors.h"
 #include "volt.h"
 #include "webserver.h"
 #include "waterlevel.h"
+#include "waterpumps.h"
 
 #ifdef GPIO_DEBUG
   GPIOViewer gpio_viewer;
@@ -33,7 +33,8 @@ void setup() {
 
   g_components.push_back(Drivhus::getLog());
   g_components.push_back(Drivhus::getSettings());
-  g_components.push_back(Drivhus::getCD74HC4067());
+  g_components.push_back(Drivhus::getWaterPumps());
+  g_components.push_back(Drivhus::getSoilSensors());
   g_components.push_back(Drivhus::getIndoorDHT22());
   g_components.push_back(Drivhus::getOutdoorDHT22());
   g_components.push_back(Drivhus::getFan());
@@ -43,7 +44,6 @@ void setup() {
   g_components.push_back(Drivhus::getNetwork());
   g_components.push_back(Drivhus::getNTP());
   g_components.push_back(Drivhus::getWebServer());
-  g_components.push_back(Drivhus::getRS485());
   g_components.push_back(Drivhus::getWaterlevel());
   g_components.push_back(Drivhus::getMQTT());
 

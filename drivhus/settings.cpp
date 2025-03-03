@@ -4,10 +4,10 @@
 #include <vector>
 #include <tuple>
 
-#include "cd74hc4067.h"
 #include "mqtt.h"
 #include "network.h"
 #include "webserver.h"
+#include "waterpumps.h"
 
 
 Drivhus::Settings::Settings(uint8_t pin)
@@ -269,7 +269,7 @@ void Drivhus::Settings::setWateringStarted(uint8_t plant_id) {
 }
 
  bool Drivhus::Settings::getIsWateringPlant(uint8_t plant_id) const {
-  return Drivhus::getCD74HC4067()->isWateringPlant(plant_id);
+  return Drivhus::getWaterPumps()->isWateringPlant(plant_id);
 }
  
 void Drivhus::Settings::calculateOutdoorHumidityIndoor() {

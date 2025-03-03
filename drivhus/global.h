@@ -27,19 +27,21 @@ static constexpr bool OFF = false;
 
 static constexpr uint8_t MAX_PLANT_COUNT = 15;
 
-static constexpr uint8_t O_CD74HC4067_COMMON_PIN = 32;
-static constexpr uint8_t O_CD74HC4067_S0_PIN   = 26;
-static constexpr uint8_t O_CD74HC4067_S1_PIN   = 25;
-static constexpr uint8_t O_CD74HC4067_S2_PIN   = 18;
-static constexpr uint8_t O_CD74HC4067_S3_PIN   = 5;
+static constexpr uint8_t O_WATERPUMP_CD74HC4067_COMMON_PIN = 32;
+static constexpr uint8_t O_WATERPUMP_CD74HC4067_S0_PIN   = 26;
+static constexpr uint8_t O_WATERPUMP_CD74HC4067_S1_PIN   = 25;
+static constexpr uint8_t O_WATERPUMP_CD74HC4067_S2_PIN   = 18;
+static constexpr uint8_t O_WATERPUMP_CD74HC4067_S3_PIN   = 5;
+static constexpr uint8_t O_SENSORS_CD74HC4067_COMMON_PIN = 12;
+static constexpr uint8_t O_SENSORS_CD74HC4067_S0_PIN   = 13;
+static constexpr uint8_t O_SENSORS_CD74HC4067_S1_PIN   = 14;
+static constexpr uint8_t O_SENSORS_CD74HC4067_S2_PIN   = 27;
+static constexpr uint8_t O_SENSORS_CD74HC4067_S3_PIN   = 2;
 static constexpr uint8_t I_DHT22_INDOOR_PIN    = 23;
 static constexpr uint8_t I_DHT22_OUTDOOR_PIN   = 19;
 static constexpr uint8_t O_FAN_PIN             = 15;
 static constexpr uint8_t O_GROWLIGHT_PIN       = 21;
 static constexpr uint8_t I_KY018_PIN           = 35;
-static constexpr uint8_t I_RS485_RX_PIN        = 13;
-static constexpr uint8_t O_RS485_TX_PIN        = 27;
-static constexpr uint8_t O_RS485_ENABLE_PIN    = 14;
 static constexpr uint8_t I_SETUP_MODE_ENABLE_PIN = 33;
 static constexpr uint8_t I_VOLT_PIN            = 34;
 static constexpr uint8_t O_WATER_VALVE_PIN     = 22;
@@ -61,9 +63,6 @@ constexpr TimezoneInfo g_timezones[] = {{"CET", "Central European Time", {"", La
 class Settings;
 [[nodiscard]] std::shared_ptr<Settings> getSettings();
 
-class CD74HC4067; //16-channel multiplexer
-[[nodiscard]] std::shared_ptr<CD74HC4067> getCD74HC4067();
-
 class DHT22; //Temperature/Humidity sensor
 [[nodiscard]] std::shared_ptr<DHT22> getIndoorDHT22();
 [[nodiscard]] std::shared_ptr<DHT22> getOutdoorDHT22();
@@ -80,9 +79,6 @@ class KY018; //Light sensor
 class Log;
 [[nodiscard]] std::shared_ptr<Log> getLog();
 
-class RS485; //Soil sensors bus
-[[nodiscard]] std::shared_ptr<RS485> getRS485();
-
 class MQTT;
 [[nodiscard]] std::shared_ptr<MQTT> getMQTT();
 
@@ -92,6 +88,9 @@ class Network;
 class NTP;
 [[nodiscard]] std::shared_ptr<NTP> getNTP();
 
+class SoilSensors;
+[[nodiscard]] std::shared_ptr<SoilSensors> getSoilSensors();
+
 class WebServer;
 [[nodiscard]] std::shared_ptr<WebServer> getWebServer();
 
@@ -100,6 +99,9 @@ class Volt; //Volt sensor
 
 class Waterlevel; //Waterlevel sensors
 [[nodiscard]] std::shared_ptr<Waterlevel> getWaterlevel();
+
+class WaterPumps;
+[[nodiscard]] std::shared_ptr<WaterPumps> getWaterPumps();
 
 
 [[nodiscard]] const TimezoneInfo* getTimezoneInfo(const std::string& timezone);

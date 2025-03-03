@@ -1,4 +1,4 @@
-#include "cd74hc4067.h"
+#include "waterpumps.h"
 
 #ifdef TESTING
 # include "testing.h"
@@ -11,7 +11,7 @@
 #include "settings.h"
 
 
-Drivhus::CD74HC4067::CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin)
+Drivhus::WaterPumps::WaterPumps(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin)
 : Drivhus::Component(),
   Drivhus::OnConfigChangeListener(),
   m_s0_pin(s0_pin),
@@ -25,7 +25,7 @@ Drivhus::CD74HC4067::CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, 
   Drivhus::getSettings()->addConfigChangeListener(this);
 }
 
-bool Drivhus::CD74HC4067::init() {
+bool Drivhus::WaterPumps::init() {
   pinMode(m_s0_pin, OUTPUT);
   pinMode(m_s1_pin, OUTPUT);
   pinMode(m_s2_pin, OUTPUT);
@@ -34,12 +34,12 @@ bool Drivhus::CD74HC4067::init() {
   return true;
 }
 
-bool Drivhus::CD74HC4067::postInit() {
+bool Drivhus::WaterPumps::postInit() {
   deactivate();
   return true;
 }
 
-void Drivhus::CD74HC4067::loop() {
+void Drivhus::WaterPumps::loop() {
   const unsigned long current_time = millis();
 
   if (m_previous_watering_time != 0L) { //If currently watering, and enough time has passed, stop watering
@@ -81,10 +81,10 @@ void Drivhus::CD74HC4067::loop() {
   }
 }
 
-void Drivhus::CD74HC4067::onConfigChanged(Drivhus::OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id*/) {
+void Drivhus::WaterPumps::onConfigChanged(Drivhus::OnConfigChangeListener::Type /*type*/, uint8_t /*plant_id*/) {
 }
 
-void Drivhus::CD74HC4067::activate(uint8_t plant_id) {
+void Drivhus::WaterPumps::activate(uint8_t plant_id) {
   Drivhus::ValveStatus valve_status = Drivhus::getSettings()->getWaterValveStatus();
   digitalWrite(m_s0_pin, (plant_id&(1<<0))==0 ? LOW : HIGH);
   digitalWrite(m_s1_pin, (plant_id&(1<<1))==0 ? LOW : HIGH);
@@ -103,7 +103,7 @@ void Drivhus::CD74HC4067::activate(uint8_t plant_id) {
   }
 }
 
-void Drivhus::CD74HC4067::deactivate() {
+void Drivhus::WaterPumps::deactivate() {
   if (Drivhus::isValidPlantId(m_current_plant_id)) {
     Drivhus::getSettings()->setWateringEnded(m_current_plant_id);
   }

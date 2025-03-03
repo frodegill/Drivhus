@@ -1,7 +1,5 @@
-#ifndef _CD74HC4067_H_
-#define _CD74HC4067_H_
-
-#include <stdint.h>
+#ifndef _WATERPUMPS_H_
+#define _WATERPUMPS_H_
 
 #include "component.h"
 #include "settings.h"
@@ -9,10 +7,10 @@
 
 namespace Drivhus {
 
-class CD74HC4067 : public Component, public OnConfigChangeListener
+class WaterPumps : public Component, public OnConfigChangeListener
 {
 public:
-  CD74HC4067(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin);
+  WaterPumps(uint8_t s0_pin, uint8_t s1_pin, uint8_t s2_pin, uint8_t s3_pin, uint8_t common_pin);
   [[nodiscard]] virtual bool init() override;
   [[nodiscard]] virtual bool postInit() override;
   virtual void loop() override;
@@ -43,4 +41,4 @@ private:
 
 } //namespace
 
-#endif // _CD74HC4067_H_
+#endif // _WATERPUMPS_H_
