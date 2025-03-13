@@ -36,6 +36,10 @@ Drivhus::Settings::Settings(uint8_t pin)
   m_fan_active(false),
   m_sunrise(0.0f),
   m_sunset(0.0f) {
+    for (uint8_t i=Drivhus::SoilSensors::MIN_ID; i<Drivhus::SoilSensors::MAX_ID; i++) {
+      m_plants[i].current_value = m_plants[i].dry_value = m_plants[i].wet_value = 0.0f;
+      m_plants[i].enabled = m_plants[i].watering_requested = m_plants[i].in_watering_cycle = false;
+    }
 }
 
 bool Drivhus::Settings::init() {

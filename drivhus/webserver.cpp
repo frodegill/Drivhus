@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "global.h"
+#include "log.h"
 #include "network.h"
 #include "settings.h"
 #include "soilsensors.h"
@@ -141,6 +142,7 @@ Emulate Growlight location: <input type="number" id="EM_LATITUDE" min="-90" max=
   function onLoad(event){initWebSocket();}
   function updateSetup(){websocket.send('SETUP'+elmValue('SSID')+'\n'+elmValue('SSID_PASSWORD')+'\n'+elmValue('MQTT_SERVER')+'\n'+elmValue('MQTT_PORT')+'\n'+elmValue('MQTT_ID')+'\n'+elmValue('MQTT_USERNAME')+'\n'+elmValue('MQTT_PASSWORD')+'\n'
     +elmValue('TZ')+'\n'+elmValue('EM_LATITUDE')+'\n'+elmValue('EM_LONGITUDE'));}
+  function toggleSensor(id){websocket.send(id);}
   function testWaterpumps(){websocket.send('TP');}
   function updateVoltMultiplier(){websocket.send('W'+elmValue('Z'));}
   function elmValue(elmId){return document.getElementById(elmId).value;}
@@ -307,12 +309,14 @@ void Drivhus::WebServer::onConfigChanged(Drivhus::OnConfigChangeListener::Type t
           m_is_showing_setup = tmp;
           notifyClients("A", m_is_showing_setup ? "" : "hidden");
           for (uint8_t sensor_id=Drivhus::SoilSensors::MIN_ID; sensor_id<=Drivhus::SoilSensors::MAX_ID; sensor_id++) {
-            notifyClients(std::string("m")+std::to_string('A'+sensor_id), generateSensorControl(sensor_id));
+            notifyClients(std::string("m")+static_cast<char>('A'+sensor_id-1), generateSensorControl(sensor_id));
           }
           notifyClients("W", generateVoltMultiplierCalibration());
         }
       }
       break;
+    case Drivhus::OnConfigChangeListener::Type::PLANT_ENABLED:
+      notifyClients(std::string("m")+static_cast<char>('A'+id-1), generateSensorControl(id)); //[[fallthrough]]
     case Drivhus::OnConfigChangeListener::Type::PLANT_WET_VALUE: //[[fallthrough]]
     case Drivhus::OnConfigChangeListener::Type::PLANT_DRY_VALUE:
       updateSensor(id);
@@ -350,6 +354,9 @@ void Drivhus::WebServer::handleWebSocketMessage(void* arg, uint8_t* data, size_t
         }
       }
       Drivhus::getSettings()->setShouldFlushSettings();
+    } else if (len>=2 && *data_str=='z') {
+      uint8_t sensor_id = data_str[1]-'A'+1;
+      Drivhus::getSettings()->setEnabled(sensor_id, !Drivhus::getSettings()->getEnabled(sensor_id));
     } else if (len>=2 && std::strncmp("TP", data_str, 2)==0) {
       Drivhus::getWebServer()->activateWaterpumpsTests();
     } else if (*data_str=='W') {
@@ -368,10 +375,10 @@ String Drivhus::WebServer::processor(const String& var){
   if (var == "A") {
     return Drivhus::getSettings()->getIsInSetupMode() ? "" : "hidden";
   } else if (var.startsWith("l") && var.length()>=2) {
-    uint8_t sensor_id = var[1]-'A';
+    uint8_t sensor_id = var[1]-'A'+1;
     return String(Drivhus::getWebServer()->getSensorValueAsString(sensor_id).c_str());
   } else if (var.startsWith("m") && var.length()>=2) {
-    uint8_t sensor_id = var[1]-'A';
+    uint8_t sensor_id = var[1]-'A'+1;
     return String(Drivhus::getWebServer()->generateSensorControl(sensor_id).c_str());
   } else if (var == "N") {
     return String(Drivhus::getWebServer()->getIndoorTemp(), 1);
@@ -416,9 +423,6 @@ String Drivhus::WebServer::processor(const String& var){
       return String(Drivhus::getSettings()->getEmulateLatitude());
     } else if (var == "K") {
       return String(Drivhus::getSettings()->getEmulateLongitude());
-    } else if (var.startsWith("z") && var.length()>=2) {
-      uint8_t sensor_id = var[1]-'A';
-      return String(Drivhus::getSettings()->getEnabled(sensor_id)?"checked":"");
     }
   }
 #if 0
@@ -433,7 +437,7 @@ void Drivhus::WebServer::textAll(const std::string& key, const std::string& data
 
 void Drivhus::WebServer::updateSensor(uint8_t sensor_id) {
   if (sensor_id>=Drivhus::SoilSensors::MIN_ID && sensor_id<=Drivhus::SoilSensors::MAX_ID) {
-    notifyClients(std::string("l")+std::to_string('A'+sensor_id), getSensorValueAsString(sensor_id));
+    notifyClients(std::string("l")+static_cast<char>('A'+sensor_id-1), getSensorValueAsString(sensor_id));
   }
 }
 
@@ -474,7 +478,8 @@ std::string Drivhus::WebServer::generateSensorControl(uint8_t sensor_id) const {
   std::stringstream ss;
   if (Drivhus::getSettings()->getIsInSetupMode())
   {
-    ss << "<input type=\"checkbox\" id=\"z" << ('A'+sensor_id) << "\" onChange=\"toggleSensor(this)\" %z" << ('A'+sensor_id) << "%>";
+    ss << "<input type=\"checkbox\" id=\"z" << static_cast<char>('A'+sensor_id-1) << "\" onChange=\"toggleSensor(this.id)\" "
+       << (Drivhus::getSettings()->getEnabled(sensor_id)?"checked":"") << ">";
   }
   return ss.str();
 }
