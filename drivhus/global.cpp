@@ -120,7 +120,7 @@ std::shared_ptr<Drivhus::SoilSensors> g_soilsensors;
                                                            O_SENSORS_CD74HC4067_S1_PIN,
                                                            O_SENSORS_CD74HC4067_S2_PIN,
                                                            O_SENSORS_CD74HC4067_S3_PIN,
-                                                           O_SENSORS_CD74HC4067_COMMON_PIN);
+                                                           I_SENSORS_CD74HC4067_COMMON_PIN);
   }
   return g_soilsensors;
 }
