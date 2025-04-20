@@ -2,6 +2,7 @@
 
 #include "global.h"
 
+#include "log.h"
 #include "network.h"
 #include "webserver.h"
 
@@ -40,7 +41,9 @@ void Drivhus::SoilSensors::loop() {
 
   if (m_previous_sensor_activate_time!=0 &&
      (m_previous_sensor_activate_time+SENSOR_ACTIVATE_DELAY_MS) < current_time) {
-    Drivhus::getSettings()->setPlantMoisture(m_active_sensor_id, getCurrentSensorValue());
+    if (Drivhus::getSettings()->getEnabled(m_active_sensor_id)) {
+      Drivhus::getSettings()->setPlantMoisture(m_active_sensor_id, getCurrentSensorValue());
+    }
     activateNextSensor();
   } else if (m_active_sensor_id==UNDEFINED_ID &&
       (m_previous_complete_scan_time+SCAN_INTERVAL_MS)<current_time) {
@@ -49,17 +52,10 @@ void Drivhus::SoilSensors::loop() {
 }
 
 void Drivhus::SoilSensors::activateNextSensor() {
-  if (m_active_sensor_id == UNDEFINED_ID) {
-    m_active_sensor_id = MIN_ID;
-  } else {
-    m_active_sensor_id++;
-    while (m_active_sensor_id<=MAX_ID && !Drivhus::getSettings()->getEnabled(m_active_sensor_id)) {
-      m_active_sensor_id++;
-    }
-    if (m_active_sensor_id > MAX_ID) {
-      m_active_sensor_id = UNDEFINED_ID;
-      m_previous_complete_scan_time = millis();
-    }
+  m_active_sensor_id = (m_active_sensor_id == UNDEFINED_ID) ? MIN_ID : ++m_active_sensor_id;
+  if (m_active_sensor_id > MAX_ID) {
+    m_active_sensor_id = UNDEFINED_ID;
+    m_previous_complete_scan_time = millis();
   }
 
   activate(m_active_sensor_id);

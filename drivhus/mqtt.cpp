@@ -169,6 +169,8 @@ void Drivhus::MQTT::callback(const char* topic, const uint8_t* payload, unsigned
           if (true == kv.value().as<bool>()) {
             Drivhus::getSettings()->setRequestWatering(plant_id);
           }
+        } else if (0 == ::strncmp("enabled", key, 7)) {
+          Drivhus::getSettings()->setEnabled(plant_id, kv.value().as<bool>());
         } else if (0 == ::strncmp("dry_value", key, 9)) {
           Drivhus::getSettings()->setDryValue(plant_id, max(0.0f, min(100.0f, kv.value().as<float>())));
         } else if (0 == ::strncmp("wet_value", key, 9)) {
@@ -240,8 +242,13 @@ void Drivhus::MQTT::publishPendingFields() {
 
   for (auto i=1; i<=Drivhus::MAX_PLANT_COUNT; i++) {
     if ((m_plants_changed & 1<<(i-1)) != 0) {
-      if (appendField(ss, first, "plant"+std::to_string(i)+".moisture", Drivhus::getSettings()->getPlantMoisture(i), 2) &&
-          appendField(ss, first, "plant"+std::to_string(i)+".watering", Drivhus::getSettings()->getIsWateringPlant(i) ? 1 : 0)) {
+      if (Drivhus::getSettings()->getEnabled(i)) {
+        if (appendField(ss, first, "plant"+std::to_string(i)+".moisture", Drivhus::getSettings()->getPlantMoisture(i), 2) &&
+            appendField(ss, first, "plant"+std::to_string(i)+".watering", Drivhus::getSettings()->getIsWateringPlant(i) ? 1 : 0)) {
+          plants_pushed |= 1<<(i-1);
+        }
+      } else {
+        Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Got MQTT change event for disabled plant ")+std::to_string(i));
         plants_pushed |= 1<<(i-1);
       }
     }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <tuple>
 
+#include "log.h"
 #include "mqtt.h"
 #include "network.h"
 #include "webserver.h"
@@ -288,8 +289,12 @@ void Drivhus::Settings::calculateOutdoorHumidityIndoor() {
 }
 
 void Drivhus::Settings::setPlantMoisture(uint8_t plant_id, float value) {
+  if (!getEnabled(plant_id)) {
+    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Got value for disabled plant " + std::to_string(plant_id)));
+  }
   if (Drivhus::isValidPlantId(plant_id) && m_plants[plant_id-1].current_value!=value) {
     m_plants[plant_id-1].current_value=value;
+    Drivhus::getLog()->print(Drivhus::Log::LogLevel::LEVEL_DEBUG, std::string("Set plant " + std::to_string(plant_id) + std::string(" to ") + Drivhus::floatToString(m_plants[plant_id-1].current_value, 2)));
     notifyValueChangeListeners(OnValueChangeListener::Type::PLANT_MOISTURE, plant_id);
   }
 }
