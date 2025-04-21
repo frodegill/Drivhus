@@ -265,6 +265,15 @@ void Drivhus::MQTT::publishPendingFields() {
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY)!=0) {
     if (appendField(ss, first, "ohumid", Drivhus::getSettings()->getOutdoorHumidity(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY;}
   }
+  if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::INDOOR_TEMP)!=0 ||
+      (m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::INDOOR_HUMIDITY)!=0 ||
+      (m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_TEMP)!=0 ||
+      (m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::OUTDOOR_HUMIDITY)!=0) {
+    float oihumid = Drivhus::getSettings()->getOutdoorAsIndoorHumidity();
+    if (oihumid != NAN) {
+      appendField(ss, first, "oihumid", oihumid, 2);
+    }
+  }
   if ((m_fields_changed & 1<<Drivhus::OnValueChangeListener::Type::LIGHT)!=0) {
     if (appendField(ss, first, "light", Drivhus::getSettings()->getLight(), 2)) {fields_pushed |= 1<<Drivhus::OnValueChangeListener::Type::LIGHT;}
   }
