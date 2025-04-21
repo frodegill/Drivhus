@@ -16,8 +16,8 @@ namespace Drivhus {
 class Waterlevel : public Component, public OnValueChangeListener
 {
 private:
-  static constexpr unsigned long MAXIMUM_VALVE_OPEN_MS = 30*1000L;
-  static constexpr unsigned long VALVE_FORCED_CLOSE_TIMEOUT_MS = 30*60*1000L;
+  static constexpr unsigned long MAXIMUM_VALVE_OPEN_MS = 60*1000L;
+  static constexpr unsigned long VALVE_FORCED_CLOSE_TIMEOUT_MS = 15*60*1000L;
 
 public:
   Waterlevel(uint8_t low_pin, uint8_t high_pin, uint8_t valve_pin);
