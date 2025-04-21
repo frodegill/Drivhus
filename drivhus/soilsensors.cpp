@@ -70,5 +70,5 @@ void Drivhus::SoilSensors::activate(uint8_t plant_id) {
 }
 
 float Drivhus::SoilSensors::getCurrentSensorValue() const {
-  return analogRead(m_common_pin)/40.95f;
+  return (4095 - analogRead(m_common_pin))/40.95f; //Sensors use 0 for very wet and 4095 for very dry. Adjust to 0% being very dry and 100% being very wet
 }

@@ -48,8 +48,8 @@ void Drivhus::WaterPumps::loop() {
       deactivate();
     }
   } else {
-    if (++m_current_plant_id > Drivhus::MAX_PLANT_COUNT) {
-      m_current_plant_id = 1;
+    if (++m_current_plant_id > Drivhus::SoilSensors::MAX_ID) {
+      m_current_plant_id = Drivhus::SoilSensors::MIN_ID;
     }
 
     auto settings = Drivhus::getSettings();
@@ -66,15 +66,23 @@ void Drivhus::WaterPumps::loop() {
         settings->setIsInWateringCycle(m_current_plant_id, false);
       }
 
-      if (settings->getRequestWatering(m_current_plant_id)
-          ||
-          (settings->getEnabled(m_current_plant_id) &&
-           (settings->getPreviousWateringTimeMs(m_current_plant_id)+settings->getWateringGracePeriodMs(m_current_plant_id)) < current_time &&
-           (settings->getPlantMoisture(m_current_plant_id) < settings->getDryValue(m_current_plant_id) ||
-            (settings->getPlantMoisture(m_current_plant_id) < settings->getWetValue(m_current_plant_id) && settings->getIsInWateringCycle(m_current_plant_id))
-           )
-          )
-         ) {
+      bool activate_watering = false;
+      if (settings->getRequestWatering(m_current_plant_id)) { //Manual request should overrule anything
+        activate_watering = true;
+      }
+      if (settings->getEnabled(m_current_plant_id) && //If plant is enabled and we are not in grace period
+          (settings->getPreviousWateringTimeMs(m_current_plant_id)+settings->getWateringGracePeriodMs(m_current_plant_id)) < current_time)
+      {
+        if (settings->getPlantMoisture(m_current_plant_id) < settings->getDryValue(m_current_plant_id)) { //If plant is too dry
+          activate_watering = true;
+        }
+        if (settings->getPlantMoisture(m_current_plant_id) < settings->getWetValue(m_current_plant_id) && //If plant is in expected moisture, but we are in watering cycle and should water until it is borderline wet
+            settings->getIsInWateringCycle(m_current_plant_id)) {
+          activate_watering = true;
+        }
+      }
+
+      if (activate_watering) {
         activate(m_current_plant_id);
       }
     }
